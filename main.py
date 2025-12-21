@@ -16,7 +16,7 @@ from src.logic import trading_strategy
 # --- CONSTANTS ---
 DATE_FORMAT = '%Y-%m-%d %H:%M'
 
-# --- INITIALIZATION ---
+
 st.set_page_config(page_title="Multi-Asset Terminal Elite", layout="wide")
 styles.inject_terminal_stylesheet()
 
