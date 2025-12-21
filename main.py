@@ -1,6 +1,6 @@
 """
 Main Application Module - TEMA Strategy Version (Clean Code Optimized).
-Integrates the Triple Exponential Moving Average for trend forecasting.
+
 """
 
 from typing import List, Dict, Any, Tuple
