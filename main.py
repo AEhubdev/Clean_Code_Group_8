@@ -8,8 +8,7 @@ from src.engines import data_engine, tema_strategy_engine
 from src.ui import styles
 from src.logic import trading_strategy
 
-
-#Initialize
+# Initialize
 st.set_page_config(page_title="Multi-Asset Analytics Dashboard", layout="wide")
 styles.inject_terminal_stylesheet()
 
@@ -91,17 +90,63 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
     res_gap = ((res_20d - current_price) / current_price) * 100
     styles.render_intelligence_signal("RESISTANCE GAP", f"{res_gap:.2f}%", "TO 20D HIGH", styles.HOLD_COLOR)
 
-    with st.expander("ℹ️ Signal Definitions"):
+    # --- ADDED: Fundamental Snapshot & Risk Boxes ---
+    _render_fundamental_snapshot(market_df)
+    _render_risk_analytics(market_df)
+
+    with st.expander("ℹ Signal Definitions"):
         st.markdown(f"""
             <div style="font-size: 0.85rem; color: {styles.TEXT_SUBDUED};">
                 <b>TEMA TARGET:</b> Price prediction based on Triple Exponential Moving Averages.<br><br>
                 <b>PRIMARY STRATEGY:</b> Current actionable signal (Buy/Sell/Hold) derived from momentum and trend alignment.<br><br>
                 <b>MARKET REGIME:</b> Global trend state. Bullish if price is above key Moving Averages (MA20/MA50).<br><br>
-                <b>RESISTANCE GAP:</b> Percentage distance to the 20-day high. Low values suggest a breakout is near.
+                <b>SHARPE RATIO:</b> Risk-adjusted return. Above 1.0 is considered good.<br><br>
+                <b>MAX DRAWDOWN:</b> Largest peak-to-valley drop in the current period.<br><br>
+                <b>RESISTANCE GAP:</b> Percentage distance to the 20-day high.
             </div>
         """, unsafe_allow_html=True)
 
-    latest = market_df.iloc[-1]
+
+def _render_fundamental_snapshot(df: pd.DataFrame) -> None:
+    """Displays key price-action based fundamental boundaries."""
+    st.markdown("### Fundamental Snapshot")
+    with st.container(border=True):
+        high_52w = df['High'].tail(252).max()
+        low_52w = df['Low'].tail(252).min()
+        current = df['Close'].iloc[-1]
+
+        # Calculate where we are in the 52-week range
+        range_pos = ((current - low_52w) / (high_52w - low_52w)) * 100
+
+        c1, c2 = st.columns(2)
+        c1.caption("52W High")
+        c1.markdown(f"**${high_52w:,.2f}**")
+        c2.caption("52W Low")
+        c2.markdown(f"**${low_52w:,.2f}**")
+
+        st.progress(min(max(range_pos / 100, 0.0), 1.0))
+        st.caption(f"Price is at {range_pos:.1f}% of its 52-week range")
+
+
+def _render_risk_analytics(df: pd.DataFrame) -> None:
+    """Calculates and displays risk-adjusted performance."""
+    st.markdown("### Risk Analytics")
+    with st.container(border=True):
+        returns = df['Close'].pct_change().dropna()
+
+        # Annualized Sharpe Ratio (Simplified)
+        sharpe = (returns.mean() / returns.std()) * (252 ** 0.5) if returns.std() != 0 else 0
+
+        # Max Drawdown
+        cumulative = (1 + returns).cumprod()
+        peak = cumulative.cummax()
+        drawdown = (cumulative - peak) / peak
+        max_dd = drawdown.min() * 100
+
+        r1, r2 = st.columns(2)
+        r1.metric("Sharpe Ratio", f"{sharpe:.2f}")
+        r2.metric("Max Drawdown", f"{max_dd:.1f}%", delta_color="inverse")
+
 
 def _render_all_charts(ticker: str) -> None:
     """Wrapper for categorical chart rendering."""
@@ -121,7 +166,7 @@ def _render_chart_container(title: str, chart_type: str, key: str, ticker: str) 
         header_col, type_col, selector_col = st.columns([0.5, 0.2, 0.3])
         header_col.markdown(f"**{title}**")
 
-        #Toggle only appears for the main price chart
+        # Toggle only appears for the main price chart
         price_style = "Candlestick"
         if chart_type == "price":
             price_style = type_col.selectbox(
@@ -189,7 +234,8 @@ def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> N
         fig.add_trace(go.Candlestick(x=idx, open=data['Open'], high=data['High'], low=data['Low'], close=data['Close'],
                                      name="Price"))
     else:
-        fig.add_trace(go.Scatter(x=idx, y=data['Close'], line=dict(color=styles.COLOR_WHITE, width=2), name="Price (Line)"))
+        fig.add_trace(
+            go.Scatter(x=idx, y=data['Close'], line=dict(color=styles.COLOR_WHITE, width=2), name="Price (Line)"))
 
     fig.add_trace(go.Scatter(x=idx, y=data['MA20'], line=dict(color=styles.HOLD_COLOR, width=1.5), name="MA20"))
     fig.add_trace(go.Scatter(x=idx, y=data['MA50'], line=dict(color=styles.MACD_COLOR, width=1.5), name="MA50"))
@@ -206,7 +252,7 @@ def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> N
 
 def _add_signal_markers(fig: go.Figure, data: pd.DataFrame, idx: pd.Index) -> None:
     """Helper to cleanly place Buy/Sell triangles on the chart."""
-    buffer = (data['High'].max() - data['Low'].min()) * 0.02 #2% buffer to avoid the overlap on the chart
+    buffer = (data['High'].max() - data['Low'].min()) * 0.02  # 2% buffer to avoid the overlap on the chart
 
     for sig_type, symbol, color, col in [('Buy', 'triangle-up', styles.SUCCESS_COLOR, 'Low'),
                                          ('Sell', 'triangle-down', styles.DANGER_COLOR, 'High')]:
