@@ -1,5 +1,8 @@
 from typing import Dict, Final
 
+DEFAULT_INTERVAL_CODE = "1d"
+INTRADAY_INTERVAL_CODES = ["15m", "1h"]
+
 DATE_FORMAT = '%Y-%m-%d %H:%M'
 
 # Mapping short names with full names
