@@ -1,8 +1,3 @@
-"""
-Main Application Module - TEMA Strategy Version (Clean Code Optimized).
-
-"""
-
 from typing import List, Dict, Any, Tuple
 import pandas as pd
 import plotly.graph_objects as go
@@ -16,7 +11,7 @@ from src.logic import trading_strategy
 # --- CONSTANTS ---
 DATE_FORMAT = '%Y-%m-%d %H:%M'
 
-
+# --- INITIALIZATION ---
 st.set_page_config(page_title="Multi-Asset Terminal Elite", layout="wide")
 styles.inject_terminal_stylesheet()
 
@@ -83,10 +78,11 @@ def _render_intelligence_center(market_df: pd.DataFrame, current_price: float) -
     if not prediction.empty:
         target_price = prediction['Predicted'].iloc[-1]
         upside = ((target_price - current_price) / current_price) * 100
-        styles.render_intelligence_signal("TEMA ESTIMATED TARGET", f"${target_price:,.2f}", f"{upside:+.2f}%", "#FFD700")
+        styles.render_intelligence_signal("TEMA ESTIMATED TARGET", f"${target_price:,.2f}", f"{upside:+.2f}%",
+                                          "#FFD700")
 
     # 2. Strategy & Regime
-    signal, color = trading_strategy.evaluate_market_signal(latest)
+    signal, color = trading_strategy.evaluate_market_signal(market_df)
     styles.render_intelligence_signal("PRIMARY STRATEGY", signal, "LIVE", color)
 
     is_bullish = current_price > latest['MA20'] > latest['MA50']
@@ -97,7 +93,6 @@ def _render_intelligence_center(market_df: pd.DataFrame, current_price: float) -
     res_20d = market_df['High'].tail(20).max()
     res_gap = ((res_20d - current_price) / current_price) * 100
     styles.render_intelligence_signal("RESISTANCE GAP", f"{res_gap:.2f}%", "TO 20D HIGH", "#00D4FF")
-
 
 def _render_all_charts(ticker: str) -> None:
     """Wrapper for categorical chart rendering."""
@@ -112,10 +107,18 @@ def _render_all_charts(ticker: str) -> None:
 
 
 def _render_chart_container(title: str, chart_type: str, key: str, ticker: str) -> None:
-    """Generic container for fetching data and dispatching Plotly layers."""
+    """Generic container with added toggles for Price chart types."""
     with st.container(border=True):
-        header_col, selector_col = st.columns([0.7, 0.3])
+        header_col, type_col, selector_col = st.columns([0.5, 0.2, 0.3])
         header_col.markdown(f"**{title}**")
+
+        #Toggle only appears for the main price chart
+        price_style = "Candlestick"
+        if chart_type == "price":
+            price_style = type_col.selectbox(
+                "Style", ["Candlestick", "Line"], index=0,
+                key=f"style_{key}_{ticker}", label_visibility="collapsed"
+            )
 
         timeframe = selector_col.selectbox(
             "TF", list(config.AVAILABLE_TIMEFRAMES.keys()), index=2,
@@ -127,7 +130,9 @@ def _render_chart_container(title: str, chart_type: str, key: str, ticker: str) 
 
         plot_data = df.tail(150).copy()
         fig = go.Figure()
-        _dispatch_chart_type(fig, plot_data, chart_type)
+
+        # Modified to pass the price_style
+        _dispatch_chart_type(fig, plot_data, chart_type, price_style)
 
         fig.update_layout(
             template="plotly_dark", margin=dict(t=30, b=5, l=5, r=5),
@@ -137,20 +142,20 @@ def _render_chart_container(title: str, chart_type: str, key: str, ticker: str) 
         st.plotly_chart(fig, use_container_width=True)
 
 
-def _dispatch_chart_type(fig: go.Figure, data: pd.DataFrame, chart_type: str) -> None:
+def _dispatch_chart_type(fig: go.Figure, data: pd.DataFrame, chart_type: str, price_style: str = "Candlestick") -> None:
     """Routes the figure to the specific technical layer."""
-    layer_map = {
-        "price": _plot_price_layer,
-        "volume": _plot_volume_layer,
-        "rsi": _plot_rsi_layer,
-        "macd": _plot_macd_layer
-    }
-    if chart_type in layer_map:
-        layer_map[chart_type](fig, data)
+    if chart_type == "price":
+        _plot_price_layer(fig, data, price_style)
+    elif chart_type == "volume":
+        _plot_volume_layer(fig, data)
+    elif chart_type == "rsi":
+        _plot_rsi_layer(fig, data)
+    elif chart_type == "macd":
+        _plot_macd_layer(fig, data)
 
 
-def _plot_price_layer(fig: go.Figure, data: pd.DataFrame) -> None:
-    """Main price action layer including Bollinger, TEMA, and Signals."""
+def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> None:
+    """Main price action layer with conditional rendering for Candlestick vs Line."""
     forecast = tema_strategy_engine.generate_tema_forecast(data)
     idx = data.index.strftime(DATE_FORMAT)
 
@@ -160,14 +165,20 @@ def _plot_price_layer(fig: go.Figure, data: pd.DataFrame) -> None:
                     fill='tonexty', fillcolor='rgba(173, 216, 230, 0.05)', name="BB Lower")
 
     # 2. Price Representation
-    fig.add_trace(go.Candlestick(x=idx, open=data['Open'], high=data['High'], low=data['Low'], close=data['Close'], name="Price"))
+    if price_style == "Candlestick":
+        fig.add_trace(go.Candlestick(x=idx, open=data['Open'], high=data['High'], low=data['Low'], close=data['Close'],
+                                     name="Price"))
+    else:
+        fig.add_trace(go.Scatter(x=idx, y=data['Close'], line=dict(color='#FFFFFF', width=2), name="Price (Line)"))
+
     fig.add_trace(go.Scatter(x=idx, y=data['MA20'], line=dict(color='#00D4FF', width=1.5), name="MA20"))
     fig.add_trace(go.Scatter(x=idx, y=data['MA50'], line=dict(color='#FF8C00', width=1.5), name="MA50"))
 
     # 3. Forecast & Signals
     if not forecast.empty:
         f_idx = forecast.index.strftime(DATE_FORMAT)
-        fig.add_scatter(x=f_idx, y=forecast['Predicted'], line=dict(color='#FFD700', width=3, dash='dashdot'), name="TEMA Trend")
+        fig.add_scatter(x=f_idx, y=forecast['Predicted'], line=dict(color='#FFD700', width=3, dash='dashdot'),
+                        name="TEMA Trend")
 
     _add_signal_markers(fig, data, idx)
     fig.update_layout(height=config.LayoutSettings.MAIN_CHART_HEIGHT)
@@ -177,7 +188,8 @@ def _add_signal_markers(fig: go.Figure, data: pd.DataFrame, idx: pd.Index) -> No
     """Helper to cleanly place Buy/Sell triangles on the chart."""
     buffer = (data['High'].max() - data['Low'].min()) * 0.02
 
-    for sig_type, symbol, color, col in [('Buy', 'triangle-up', '#00FF41', 'Low'), ('Sell', 'triangle-down', '#FF3131', 'High')]:
+    for sig_type, symbol, color, col in [('Buy', 'triangle-up', '#00FF41', 'Low'),
+                                         ('Sell', 'triangle-down', '#FF3131', 'High')]:
         mask = data[f'{sig_type}_Signal']
         y_pos = data[col] - buffer if sig_type == 'Buy' else data[col] + buffer
         fig.add_trace(go.Scatter(
