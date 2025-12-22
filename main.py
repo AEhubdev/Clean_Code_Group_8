@@ -6,7 +6,7 @@ import streamlit as st
 import config
 from src.engines import data_engine, tema_strategy_engine
 from src.ui import styles
-from src.logic import trading_strategy
+from src.logic import trading_strategy, risk_engine
 
 # Initialize
 st.set_page_config(page_title="Multi-Asset Analytics Dashboard", layout="wide")
@@ -175,20 +175,12 @@ def _render_risk_analytics(df: pd.DataFrame) -> None:
     """Calculates and displays risk-adjusted performance."""
     st.markdown("### Risk Analytics")
     with st.container(border=True):
-        returns = df['Close'].pct_change().dropna()
-
-        # Annualized Sharpe Ratio (Simplified)
-        sharpe = (returns.mean() / returns.std()) * (252 ** 0.5) if returns.std() != 0 else 0
-
-        # Max Drawdown
-        cumulative = (1 + returns).cumprod()
-        peak = cumulative.cummax()
-        drawdown = (cumulative - peak) / peak
-        max_dd = drawdown.min() * 100
+        # Call the new logic engine instead of doing math here
+        metrics = risk_engine.calculate_risk_metrics(df)
 
         r1, r2 = st.columns(2)
-        r1.metric("Sharpe Ratio", f"{sharpe:.2f}")
-        r2.metric("Max Drawdown", f"{max_dd:.1f}%", delta_color="inverse")
+        r1.metric("Sharpe Ratio", f"{metrics['sharpe']:.2f}")
+        r2.metric("Max Drawdown", f"{metrics['max_dd']:.1f}%", delta_color="inverse")
 
 
 def _render_all_charts(ticker: str) -> None:
