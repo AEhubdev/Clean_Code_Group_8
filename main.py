@@ -210,8 +210,8 @@ def _render_all_charts(ticker: str) -> None:
         ("MOMENTUM (RSI)", "rsi", "r1"),
         ("TREND STRENGTH (MACD)", "macd", "m1")
     ]
-    for title, c_type, key in chart_definitions:
-        _render_chart_container(title, c_type, key, ticker)
+    for title, chart_type, key in chart_definitions:
+        _render_chart_container(title, chart_type, key, ticker)
 
 
 def _render_chart_container(title: str, chart_type: str, key: str, ticker: str) -> None:
