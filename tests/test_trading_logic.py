@@ -84,7 +84,7 @@ class TestTradingSystem(unittest.TestCase):
             })
             metrics = risk_engine.calculate_risk_metrics(downward_df)
 
-            self.assertLess(metrics['max_dd'], 0)  # Drawdown should be negative
+            self.assertLess(metrics['maximum_drawdown'], 0)  # Drawdown should be negative
             self.assertIsInstance(metrics['sharpe'], float)
 
 if __name__ == "__main__":

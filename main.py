@@ -199,7 +199,7 @@ def _render_risk_analytics(df: pd.DataFrame) -> None:
 
         r1, r2 = st.columns(2)
         r1.metric("Sharpe Ratio", f"{metrics['sharpe']:.2f}")
-        r2.metric("Max Drawdown", f"{metrics['max_dd']:.1f}%", delta_color="inverse")
+        r2.metric("Max Drawdown", f"{metrics['maximum_drawdown']:.1f}%", delta_color="inverse")
 
 
 def _render_all_charts(ticker: str) -> None:
@@ -240,7 +240,7 @@ def _render_chart_container(title: str, chart_type: str, key: str, ticker: str) 
             )
 
         timeframe = selector_col.selectbox(
-            "TF", list(config.AVAILABLE_TIMEFRAMES.keys()), index=2,
+            "timeframe", list(config.AVAILABLE_TIMEFRAMES.keys()), index=2,
             key=f"{key}_{ticker}", label_visibility="collapsed"
         )
 

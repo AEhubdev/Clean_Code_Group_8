@@ -45,7 +45,7 @@ class LayoutSettings:
 
 
 # --- TIMEFRAME MAPPINGS ---
-# C1: Full names (Timeframes instead of TF)
+# C1: Full names (Timeframes instead of timeframe)
 AVAILABLE_TIMEFRAMES: Final[Dict[str, str]] = {
     "15 Minutes": "15m",
     "1 Hour": "1h",

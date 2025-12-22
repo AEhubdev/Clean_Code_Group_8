@@ -13,10 +13,10 @@ def calculate_risk_metrics(df: pd.DataFrame) -> dict:
         df (pd.DataFrame): Dataframe containing a 'Close' column.
 
     Returns:
-        dict: Dictionary containing 'sharpe' and 'max_dd' values.
+        dict: Dictionary containing 'sharpe' and 'maximum_drawdown' values.
     """
     if df.empty or 'Close' not in df.columns:
-        return {"sharpe": 0.0, "max_dd": 0.0}
+        return {"sharpe": 0.0, "maximum_drawdown": 0.0}
 
     returns = df['Close'].pct_change().dropna()
 
@@ -30,9 +30,9 @@ def calculate_risk_metrics(df: pd.DataFrame) -> dict:
     cumulative = (1 + returns).cumprod()
     peak = cumulative.cummax()
     drawdown = (cumulative - peak) / peak
-    max_dd = drawdown.min() * 100
+    maximum_drawdown = drawdown.min() * 100
 
     return {
         "sharpe": sharpe,
-        "max_dd": max_dd
+        "maximum_drawdown": maximum_drawdown
     }
