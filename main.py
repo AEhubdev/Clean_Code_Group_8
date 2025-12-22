@@ -94,8 +94,8 @@ def _render_header(name: str, price: float, df: pd.DataFrame, metrics: Tuple) ->
     yesterday_close = df['Close'].iloc[-2] if len(df) > 1 else price
     daily_delta = ((price - yesterday_close) / yesterday_close) * 100
 
-    cols = st.columns(5)
-    cols[0].metric(label="Live Price", value=f"${price:,.2f}", delta=f"{daily_delta:+.2f}%")
+    metric_columns = st.columns(5)
+    metric_columns[0].metric(label="Live Price", value=f"${price:,.2f}", delta=f"{daily_delta:+.2f}%")
 
     # Map metrics to their labels and types
     metric_configs = [
@@ -107,7 +107,7 @@ def _render_header(name: str, price: float, df: pd.DataFrame, metrics: Tuple) ->
 
     for i, (label, value, is_vol) in enumerate(metric_configs, 1):
         styles.render_colored_performance_metric(
-            cols[i], label, f"{value:+.2f}%" if not is_vol else f"{value:.2f}%", value, is_volatility=is_vol
+            metric_columns[i], label, f"{value:+.2f}%" if not is_vol else f"{value:.2f}%", value, is_volatility=is_vol
         )
 
 
