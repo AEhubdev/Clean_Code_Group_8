@@ -4,9 +4,17 @@ Implements the Triple Exponential Moving Average (TEMA) algorithm to
 forecast trend direction and generate smoothed price paths.
 """
 
-from typing import Tuple
 import pandas as pd
-import numpy as np
+
+# Step 1 (C2/C5/#21/#49): remove magic values + unused imports; make choices explicit
+CLOSE_COLUMN = "Close"
+PREDICTED_COLUMN = "Predicted"
+
+TEMA_SPAN = 20
+VELOCITY_LOOKBACK_PERIODS = 5
+
+DEFAULT_FALLBACK_FREQUENCY = "D"
+
 
 def generate_tema_forecast(
     market_dataframe: pd.DataFrame,
@@ -23,19 +31,19 @@ def generate_tema_forecast(
 
     # 1. Calculate TEMA components
     # We use a 20-period window for the primary trend
-    close_prices = market_dataframe['Close']
+    close_prices = market_dataframe[CLOSE_COLUMN]
 
-    ema1 = close_prices.ewm(span=20, adjust=False).mean()
-    ema2 = ema1.ewm(span=20, adjust=False).mean()
-    ema3 = ema2.ewm(span=20, adjust=False).mean()
+    ema1 = close_prices.ewm(span=TEMA_SPAN, adjust=False).mean()
+    ema2 = ema1.ewm(span=TEMA_SPAN, adjust=False).mean()
+    ema3 = ema2.ewm(span=TEMA_SPAN, adjust=False).mean()
 
     tema = (3 * ema1) - (3 * ema2) + ema3
 
     # 2. Calculate the "Trend Velocity"
     # We look at the slope of the TEMA over the last 5 periods
     latest_tema = tema.iloc[-1]
-    previous_tema = tema.iloc[-5]
-    tema_velocity = (latest_tema - previous_tema) / 5
+    previous_tema = tema.iloc[-VELOCITY_LOOKBACK_PERIODS]
+    tema_velocity = (latest_tema - previous_tema) / VELOCITY_LOOKBACK_PERIODS
 
     # 3. Project Future Path
     latest_price = float(close_prices.iloc[-1])
@@ -52,16 +60,21 @@ def generate_tema_forecast(
 
     # 5. Assemble Result
     forecast_results = pd.concat([
-        pd.DataFrame({'Predicted': [latest_price]}, index=[market_dataframe.index[-1]]),
-        pd.DataFrame({'Predicted': forecast_path}, index=future_dates)
+        pd.DataFrame({PREDICTED_COLUMN: [latest_price]}, index=[market_dataframe.index[-1]]),
+        pd.DataFrame({PREDICTED_COLUMN: forecast_path}, index=future_dates)
     ])
 
     return forecast_results
 
+
 def _calculate_future_indices(df: pd.DataFrame, steps: int) -> pd.DatetimeIndex:
     """Computes future timestamps based on existing frequency."""
     if len(df) < 2:
-        return pd.date_range(start=df.index[-1], periods=steps + 1, freq='D')[1:]
+        return pd.date_range(
+            start=df.index[-1],
+            periods=steps + 1,
+            freq=DEFAULT_FALLBACK_FREQUENCY
+        )[1:]
 
     delta = df.index[-1] - df.index[-2]
     return [df.index[-1] + (i * delta) for i in range(1, steps + 1)]
