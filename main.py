@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Tuple
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -8,8 +8,6 @@ from src.engines import data_engine, tema_strategy_engine
 from src.ui import styles
 from src.logic import trading_strategy
 
-# --- CONSTANTS ---
-DATE_FORMAT = '%Y-%m-%d %H:%M'
 
 # --- INITIALIZATION ---
 st.set_page_config(page_title="Multi-Asset Terminal Elite", layout="wide")
@@ -157,7 +155,7 @@ def _dispatch_chart_type(fig: go.Figure, data: pd.DataFrame, chart_type: str, pr
 def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> None:
     """Main price action layer with conditional rendering for Candlestick vs Line."""
     forecast = tema_strategy_engine.generate_tema_forecast(data)
-    idx = data.index.strftime(DATE_FORMAT)
+    idx = data.index.strftime(config.DATE_FORMAT)
 
     # 1. Structural Bands
     fig.add_scatter(x=idx, y=data['BB_U'], line=dict(color='rgba(173, 216, 230, 0.2)', width=1), name="BB Upper")
@@ -176,7 +174,7 @@ def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> N
 
     # 3. Forecast & Signals
     if not forecast.empty:
-        f_idx = forecast.index.strftime(DATE_FORMAT)
+        f_idx = forecast.index.strftime(config.DATE_FORMAT)
         fig.add_scatter(x=f_idx, y=forecast['Predicted'], line=dict(color='#FFD700', width=3, dash='dashdot'),
                         name="TEMA Trend")
 
@@ -199,14 +197,14 @@ def _add_signal_markers(fig: go.Figure, data: pd.DataFrame, idx: pd.Index) -> No
 
 
 def _plot_volume_layer(fig: go.Figure, data: pd.DataFrame) -> None:
-    idx = data.index.strftime(DATE_FORMAT)
+    idx = data.index.strftime(config.DATE_FORMAT)
     colors = ['#00FF41' if c >= o else '#FF3131' for c, o in zip(data['Close'], data['Open'])]
     fig.add_bar(x=idx, y=data['Volume'], marker_color=colors)
     fig.update_layout(height=150)
 
 
 def _plot_rsi_layer(fig: go.Figure, data: pd.DataFrame) -> None:
-    idx = data.index.strftime(DATE_FORMAT)
+    idx = data.index.strftime(config.DATE_FORMAT)
     fig.add_scatter(x=idx, y=data['RSI'], line=dict(color='#BB86FC'))
     fig.add_hline(y=config.IndicatorSettings.RSI_OVERBOUGHT_LEVEL, line_color="red", line_dash="dash")
     fig.add_hline(y=config.IndicatorSettings.RSI_OVERSOLD_LEVEL, line_color="green", line_dash="dash")
@@ -214,7 +212,7 @@ def _plot_rsi_layer(fig: go.Figure, data: pd.DataFrame) -> None:
 
 
 def _plot_macd_layer(fig: go.Figure, data: pd.DataFrame) -> None:
-    idx = data.index.strftime(DATE_FORMAT)
+    idx = data.index.strftime(config.DATE_FORMAT)
     colors = ['#00FF41' if x >= 0 else '#FF3131' for x in data['MACD_Hist']]
     fig.add_bar(x=idx, y=data['MACD_Hist'], marker_color=colors)
     fig.update_layout(height=150)
