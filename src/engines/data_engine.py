@@ -15,6 +15,15 @@ import config
 DEFAULT_INTERVAL_CODE = "1d"
 INTRADAY_INTERVAL_CODES = ["15m", "1h"]
 
+def _get_history_period(interval_code: str) -> str:
+    """(Step 3 / S2) Determine yfinance lookback period for a given interval code."""
+    if interval_code in INTRADAY_INTERVAL_CODES:
+        return "60d"
+    if interval_code == "1wk":
+        return "10y"
+    return "max"
+
+
 
 @st.cache_data(ttl=60)
 def fetch_market_dashboard_data(
@@ -35,13 +44,7 @@ def fetch_market_dashboard_data(
 
 
     # Define data lookback period based on interval granularity
-    if interval_code in INTRADAY_INTERVAL_CODES:
-
-        data_history_period = "60d"
-    elif interval_code == "1wk":
-        data_history_period = "10y"
-    else:
-        data_history_period = "max"
+    data_history_period = _get_history_period(interval_code)  # Step 3 (S2/C2): extracted helper
 
     market_dataframe = yf.download(
         tickers=ticker_symbol,
