@@ -40,8 +40,12 @@ def generate_tema_forecast(
 
         # 2. Calculate the "Trend Velocity"
         latest_tema = tema.iloc[-1]
-        previous_tema = tema.iloc[-VELOCITY_LOOKBACK_PERIODS]
-        tema_velocity = (latest_tema - previous_tema) / VELOCITY_LOOKBACK_PERIODS
+        effective_lookback = min(VELOCITY_LOOKBACK_PERIODS, len(tema) - 1)  # #68: avoid IndexError on short series
+        if effective_lookback < 1:
+            tema_velocity = 0.0
+        else:
+            previous_tema = tema.iloc[-effective_lookback - 1]
+            tema_velocity = (latest_tema - previous_tema) / effective_lookback
 
         # 3. Project Future Path
         latest_price = float(close_prices.iloc[-1])
@@ -73,4 +77,5 @@ def _calculate_future_indices(df: pd.DataFrame, steps: int) -> pd.DatetimeIndex:
         )[1:]
 
     delta = df.index[-1] - df.index[-2]
-    return [df.index[-1] + (i * delta) for i in range(1, steps + 1)]
+    return pd.DatetimeIndex([df.index[-1] + (i * delta) for i in range(1, steps + 1)])  # C2/C5: consistent return type
+
