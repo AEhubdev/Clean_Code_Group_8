@@ -29,8 +29,11 @@ def generate_tema_forecast(
     forecast_results = pd.DataFrame()
 
     if not market_dataframe.empty:
+        if CLOSE_COLUMN not in market_dataframe.columns:
+            raise KeyError(f"Missing required column '{CLOSE_COLUMN}' in market_dataframe columns.")
+
         # 1. Calculate TEMA components
-        close_prices = market_dataframe[CLOSE_COLUMN]
+        close_prices = market_dataframe[CLOSE_COLUMN].copy()  # #18: avoid side effects on shared data
 
         ema1 = close_prices.ewm(span=TEMA_SPAN, adjust=False).mean()
         ema2 = ema1.ewm(span=TEMA_SPAN, adjust=False).mean()
