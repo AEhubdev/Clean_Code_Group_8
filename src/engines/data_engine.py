@@ -160,12 +160,22 @@ def _fetch_year_start_price(fallback_df: pd.DataFrame, ticker: str) -> float:
     try:
         current_year = datetime.now().year
         ytd_data = yf.download(ticker, start=f"{current_year}-01-01", progress=False)
+
+        if ytd_data.empty:
+            raise ValueError(f"No YTD data returned for ticker='{ticker}'")
+
         if isinstance(ytd_data.columns, pd.MultiIndex):
             ytd_data.columns = ytd_data.columns.get_level_values(0)
-        return float(ytd_data['Close'].iloc[0])
-    except (IndexError, KeyError, ValueError):
+
+        return float(ytd_data["Close"].iloc[0])
+
+    except (IndexError, KeyError, ValueError) as error:
+        # #68: clear exception + safe fallback
         # Fallback to earliest available data in provided dataframe
-        return float(fallback_df['Close'].iloc[0])
+        if fallback_df.empty:
+            return 0.0
+        return float(fallback_df["Close"].iloc[0])
+
 
 
 def _fetch_asset_news(ticker: str) -> List[Dict[str, Any]]:
@@ -174,4 +184,5 @@ def _fetch_asset_news(ticker: str) -> List[Dict[str, Any]]:
         search_engine = yf.Search(ticker, news_count=5)
         return search_engine.news
     except Exception:
+        # #68: clear fallback (keep behavior: return empty list)
         return []
