@@ -26,10 +26,10 @@ class TestTradingSystem(unittest.TestCase):
             'Low': np.random.uniform(100, 200, rows),
             'Close': np.random.uniform(100, 200, rows),
             'Volume': np.random.uniform(1000, 5000, rows),
-            'MA20': [150.0] * rows,
-            'MA50': [140.0] * rows,
+            'Moving_Average_20': [150.0] * rows,
+            'Moving_Average_50': [140.0] * rows,
             'RSI': [50.0] * rows,
-            'MACD_Hist': [0.1] * rows,
+            'Moving_Average_Convergence_Divergence_Histogram': [0.1] * rows,
             'Buy_Signal': [False] * rows,
             'Sell_Signal': [False] * rows
         }, index=dates)

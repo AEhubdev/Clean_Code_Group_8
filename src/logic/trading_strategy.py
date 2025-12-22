@@ -17,9 +17,9 @@ def evaluate_market_signal(df: pd.DataFrame) -> tuple[str, str]:
 
     # 2. Extract current values
     rsi_now = latest.get('RSI')
-    macd_now = latest.get('MACD_Hist')
+    macd_now = latest.get('Moving_Average_Convergence_Divergence_Histogram')
     close_now = latest.get('Close')
-    ma20_now = latest.get('MA20')
+    Moving_Average_20_now = latest.get('Moving_Average_20')
 
     if rsi_now is None or macd_now is None:
         return "DATA INCOMPLETE", "#808495"
@@ -32,7 +32,7 @@ def evaluate_market_signal(df: pd.DataFrame) -> tuple[str, str]:
     # 4. Confluence: Current momentum must confirm the recent extreme
     is_momentum_confirmed_up = macd_now > 0
     is_momentum_confirmed_down = macd_now < 0
-    is_above_trend = close_now > ma20_now
+    is_above_trend = close_now > Moving_Average_20_now
 
     # --- Decision Logic ---
 
@@ -44,7 +44,7 @@ def evaluate_market_signal(df: pd.DataFrame) -> tuple[str, str]:
     if was_recently_overbought and is_momentum_confirmed_down:
         return "STRONG SELL", "#FF3131"
 
-    # CAUTION: Price is breaking trend (below MA20) while RSI is weak
+    # CAUTION: Price is breaking trend (below Moving_Average_20) while RSI is weak
     if not is_above_trend and rsi_now < 50:
         return "CAUTION: WEAK TREND", "#FFD700"
 

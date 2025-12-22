@@ -88,13 +88,13 @@ def _enrich_with_technical_indicators(dataframe: pd.DataFrame) -> pd.DataFrame:
     dataframe = dataframe.copy()  # #18 Immutability: avoid mutating caller dataframe
 
     # 1. Trend Indicators (Moving Averages)
-    dataframe['MA20'] = dataframe['Close'].rolling(window=settings.BOLLINGER_BANDS_PERIOD).mean()
-    dataframe['MA50'] = dataframe['Close'].rolling(window=settings.MOVING_AVERAGE_LONG_TERM).mean()
+    dataframe['Moving_Average_20'] = dataframe['Close'].rolling(window=settings.BOLLINGER_BANDS_PERIOD).mean()
+    dataframe['Moving_Average_50'] = dataframe['Close'].rolling(window=settings.MOVING_AVERAGE_LONG_TERM).mean()
 
     # 2. Volatility (Bollinger Bands)
     rolling_standard_deviation = dataframe['Close'].rolling(window=settings.BOLLINGER_BANDS_PERIOD).std()
-    dataframe['BB_U'] = dataframe['MA20'] + (rolling_standard_deviation * settings.BOLLINGER_BANDS_STANDARD_DEVIATIONS)
-    dataframe['BB_L'] = dataframe['MA20'] - (rolling_standard_deviation * settings.BOLLINGER_BANDS_STANDARD_DEVIATIONS)
+    dataframe['Bollinger_Bands_Upper'] = dataframe['Moving_Average_20'] + (rolling_standard_deviation * settings.BOLLINGER_BANDS_STANDARD_DEVIATIONS)
+    dataframe['Bollinger_Bands_Lower'] = dataframe['Moving_Average_20'] - (rolling_standard_deviation * settings.BOLLINGER_BANDS_STANDARD_DEVIATIONS)
 
     # 3. Momentum (Relative Strength Index)
     price_delta = dataframe['Close'].diff()
@@ -109,11 +109,11 @@ def _enrich_with_technical_indicators(dataframe: pd.DataFrame) -> pd.DataFrame:
     exponential_ma_26 = dataframe['Close'].ewm(span=26, adjust=False).mean()
     macd_line = exponential_ma_12 - exponential_ma_26
     signal_line = macd_line.ewm(span=9, adjust=False).mean()
-    dataframe['MACD_Hist'] = macd_line - signal_line
+    dataframe['Moving_Average_Convergence_Divergence_Histogram'] = macd_line - signal_line
 
     # 5. Strategic Signal Assignment (C2: Straightforward logic)
-    dataframe['Buy_Signal'] = (dataframe['RSI'] < settings.RSI_BULLISH_THRESHOLD) & (dataframe['MACD_Hist'] > 0)
-    dataframe['Sell_Signal'] = (dataframe['RSI'] > settings.RSI_BEARISH_THRESHOLD) & (dataframe['MACD_Hist'] < 0)
+    dataframe['Buy_Signal'] = (dataframe['RSI'] < settings.RSI_BULLISH_THRESHOLD) & (dataframe['Moving_Average_Convergence_Divergence_Histogram'] > 0)
+    dataframe['Sell_Signal'] = (dataframe['RSI'] > settings.RSI_BEARISH_THRESHOLD) & (dataframe['Moving_Average_Convergence_Divergence_Histogram'] < 0)
 
     return dataframe
 

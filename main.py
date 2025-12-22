@@ -143,7 +143,7 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
     signal, color = trading_strategy.evaluate_market_signal(market_df)
     styles.render_intelligence_signal("PRIMARY STRATEGY", signal, "LIVE", color)
 
-    is_bullish = current_price > latest['MA20'] > latest['MA50']
+    is_bullish = current_price > latest['Moving_Average_20'] > latest['Moving_Average_50']
     regime_text, regime_color = ("BULLISH", styles.SUCCESS_COLOR) if is_bullish else ("BEARISH", styles.DANGER_COLOR)
     styles.render_intelligence_signal("MARKET REGIME", regime_text, "TREND", regime_color)
 
@@ -161,7 +161,7 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
             <div style="font-size: 0.85rem; color: {styles.TEXT_SUBDUED};">
                 <b>TEMA TARGET:</b> Price prediction based on Triple Exponential Moving Averages.<br><br>
                 <b>PRIMARY STRATEGY:</b> Current actionable signal (Buy/Sell/Hold) derived from momentum and trend alignment.<br><br>
-                <b>MARKET REGIME:</b> Global trend state. Bullish if price is above key Moving Averages (MA20/MA50).<br><br>
+                <b>MARKET REGIME:</b> Global trend state. Bullish if price is above key Moving Averages (Moving_Average_20/Moving_Average_50).<br><br>
                 <b>SHARPE RATIO:</b> Risk-adjusted return. Above 1.0 is considered good.<br><br>
                 <b>MAX DRAWDOWN:</b> Largest peak-to-valley drop in the current period.<br><br>
                 <b>RESISTANCE GAP:</b> Percentage distance to the 20-day high.
@@ -278,19 +278,19 @@ def _dispatch_chart_type(fig: go.Figure, data: pd.DataFrame, chart_type: str, pr
 def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> None:
     """Main price action layer with conditional rendering for Candlestick vs Line."""
     forecast = tema_strategy_engine.generate_tema_forecast(data)
-    idx = data.index.strftime(config.DATE_FORMAT)
+    date_index = data.index.strftime(config.DATE_FORMAT)
 
     # 1. Structural Bands
     fig.add_scatter(
-        x=idx,
-        y=data['BB_U'],
+        x=date_index,
+        y=data['Bollinger_Bands_Upper'],
         line=dict(color=styles.BB_LINE_COLOR, width=1),
         name="BB Upper"
     )
 
     fig.add_scatter(
-        x=idx,
-        y=data['BB_L'],
+        x=date_index,
+        y=data['Bollinger_Bands_Lower'],
         line=dict(color=styles.BB_LINE_COLOR, width=1),
         fill='tonexty',
         fillcolor=styles.BB_FILL_COLOR,
@@ -298,26 +298,26 @@ def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> N
     )
     # 2. Price Representation
     if price_style == "Candlestick":
-        fig.add_trace(go.Candlestick(x=idx, open=data['Open'], high=data['High'], low=data['Low'], close=data['Close'],
+        fig.add_trace(go.Candlestick(x=date_index, open=data['Open'], high=data['High'], low=data['Low'], close=data['Close'],
                                      name="Price"))
     else:
         fig.add_trace(
-            go.Scatter(x=idx, y=data['Close'], line=dict(color=styles.COLOR_WHITE, width=2), name="Price (Line)"))
+            go.Scatter(x=date_index, y=data['Close'], line=dict(color=styles.COLOR_WHITE, width=2), name="Price (Line)"))
 
-    fig.add_trace(go.Scatter(x=idx, y=data['MA20'], line=dict(color=styles.HOLD_COLOR, width=1.5), name="MA20"))
-    fig.add_trace(go.Scatter(x=idx, y=data['MA50'], line=dict(color=styles.MACD_COLOR, width=1.5), name="MA50"))
+    fig.add_trace(go.Scatter(x=date_index, y=data['Moving_Average_20'], line=dict(color=styles.HOLD_COLOR, width=1.5), name="Moving_Average_20"))
+    fig.add_trace(go.Scatter(x=date_index, y=data['Moving_Average_50'], line=dict(color=styles.MACD_COLOR, width=1.5), name="Moving_Average_50"))
 
     # 3. Forecast & Signals
     if not forecast.empty:
-        f_idx = forecast.index.strftime(config.DATE_FORMAT)
-        fig.add_scatter(x=f_idx, y=forecast['Predicted'], line=dict(color=styles.COLOR_GOLD, width=3, dash='dashdot'),
+        f_date_index = forecast.index.strftime(config.DATE_FORMAT)
+        fig.add_scatter(x=f_date_index, y=forecast['Predicted'], line=dict(color=styles.COLOR_GOLD, width=3, dash='dashdot'),
                         name="TEMA Trend")
 
-    _add_signal_markers(fig, data, idx)
+    _add_signal_markers(fig, data, date_index)
     fig.update_layout(height=config.LayoutSettings.MAIN_CHART_HEIGHT)
 
 
-def _add_signal_markers(fig: go.Figure, data: pd.DataFrame, idx: pd.Index) -> None:
+def _add_signal_markers(fig: go.Figure, data: pd.DataFrame, date_index: pd.Index) -> None:
     """Sets the triangle signals on the chart"""
     buffer = (data['High'].max() - data['Low'].min()) * 0.02  # 2% buffer to avoid the overlap on the chart
 
@@ -326,23 +326,23 @@ def _add_signal_markers(fig: go.Figure, data: pd.DataFrame, idx: pd.Index) -> No
         mask = data[f'{sig_type}_Signal']
         y_pos = data[col] - buffer if sig_type == 'Buy' else data[col] + buffer
         fig.add_trace(go.Scatter(
-            x=idx[mask], y=y_pos[mask], mode='markers',
+            x=date_index[mask], y=y_pos[mask], mode='markers',
             marker=dict(symbol=symbol, size=12, color=color), name=f"{sig_type} Signal"
         ))
 
 
 def _plot_volume_layer(fig: go.Figure, data: pd.DataFrame) -> None:
     """Draws color-coded volume bars"""
-    idx = data.index.strftime(config.DATE_FORMAT)
+    date_index = data.index.strftime(config.DATE_FORMAT)
     colors = [styles.SUCCESS_COLOR if c >= o else styles.DANGER_COLOR for c, o in zip(data['Close'], data['Open'])]
-    fig.add_bar(x=idx, y=data['Volume'], marker_color=colors)
+    fig.add_bar(x=date_index, y=data['Volume'], marker_color=colors)
     fig.update_layout(height=150)
 
 
 def _plot_rsi_layer(fig: go.Figure, data: pd.DataFrame) -> None:
     """Draws RSI line and overbought/oversold thresholds"""
-    idx = data.index.strftime(config.DATE_FORMAT)
-    fig.add_scatter(x=idx, y=data['RSI'], line=dict(color=styles.RSI_COLOR))
+    date_index = data.index.strftime(config.DATE_FORMAT)
+    fig.add_scatter(x=date_index, y=data['RSI'], line=dict(color=styles.RSI_COLOR))
     fig.add_hline(y=config.IndicatorSettings.RSI_OVERBOUGHT_LEVEL, line_color="red", line_dash="dash")
     fig.add_hline(y=config.IndicatorSettings.RSI_OVERSOLD_LEVEL, line_color="green", line_dash="dash")
     fig.update_layout(height=150, yaxis=dict(range=[0, 100]))
@@ -350,9 +350,9 @@ def _plot_rsi_layer(fig: go.Figure, data: pd.DataFrame) -> None:
 
 def _plot_macd_layer(fig: go.Figure, data: pd.DataFrame) -> None:
     """Draws the MACD histogram"""
-    idx = data.index.strftime(config.DATE_FORMAT)
-    colors = [styles.SUCCESS_COLOR if x >= 0 else styles.DANGER_COLOR for x in data['MACD_Hist']]
-    fig.add_bar(x=idx, y=data['MACD_Hist'], marker_color=colors)
+    date_index = data.index.strftime(config.DATE_FORMAT)
+    colors = [styles.SUCCESS_COLOR if x >= 0 else styles.DANGER_COLOR for x in data['Moving_Average_Convergence_Divergence_Histogram']]
+    fig.add_bar(x=date_index, y=data['Moving_Average_Convergence_Divergence_Histogram'], marker_color=colors)
     fig.update_layout(height=150)
 
 
