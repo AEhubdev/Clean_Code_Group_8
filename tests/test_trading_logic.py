@@ -5,7 +5,7 @@ Automated Test Suite for Trading Logic and Engines.
 import unittest
 import pandas as pd
 import numpy as np
-from src.logic import trading_strategy
+from src.logic import trading_strategy, risk_engine
 from src.engines import tema_strategy_engine
 
 class TestTradingSystem(unittest.TestCase):
@@ -72,6 +72,20 @@ class TestTradingSystem(unittest.TestCase):
         signal, _ = trading_strategy.evaluate_market_signal(empty_df)
 
         self.assertEqual(signal, "WAITING FOR DATA")
+
+    def test_risk_metrics_calculation(self):
+            """
+            Verify that the risk engine correctly calculates Sharpe and Drawdown.
+            Tests Criteria 58 (Comprehensive).
+            """
+            # Create a dataframe with a known downward trend to test Max Drawdown
+            downward_df = pd.DataFrame({
+                'Close': [100, 90, 80, 70]
+            })
+            metrics = risk_engine.calculate_risk_metrics(downward_df)
+
+            self.assertLess(metrics['max_dd'], 0)  # Drawdown should be negative
+            self.assertIsInstance(metrics['sharpe'], float)
 
 if __name__ == "__main__":
     # Allows the test to be run directly via 'python tests/test_trading_logic.py'
