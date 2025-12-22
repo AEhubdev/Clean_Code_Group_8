@@ -160,7 +160,7 @@ def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> N
     fig.add_scatter(
         x=idx,
         y=data['BB_U'],
-        line=dict(color=config.BB_LINE_COLOR, width=1),
+        line=dict(color=styles.BB_LINE_COLOR, width=1),
         name="BB Upper"
     )
 
@@ -169,7 +169,7 @@ def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> N
         y=data['BB_L'],
         line=dict(color=config.BB_LINE_COLOR, width=1),
         fill='tonexty',
-        fillcolor=config.BB_FILL_COLOR,
+        fillcolor=styles.BB_FILL_COLOR,
         name="BB Lower"
     )
     # 2. Price Representation
