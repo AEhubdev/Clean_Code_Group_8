@@ -30,6 +30,12 @@ def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
         Example:
             >>> render_live_dashboard("GC=F", "Gold")
         """
+    if not isinstance(ticker_symbol, str) or not ticker_symbol:
+        raise ValueError(
+            f"The parameter 'ticker_symbol' must be a non-empty string, but '{ticker_symbol}' "
+            f"(type: {type(ticker_symbol).__name__}) was provided instead. "
+            f"Please check your config.ASSET_MAPPING to ensure the ticker is correctly defined."
+        )
     #Logo setup
     col1, _ = st.columns([0.1, 0.9])
 
@@ -43,7 +49,8 @@ def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
     )
 
     if market_data.empty:
-        st.error("Market data currently unavailable.")
+        st.error(
+            f"Market data for {ticker_symbol} is currently unavailable. Please check your internet connection or the ticker symbol.")
         return
 
     performance_metrics = data_engine.calculate_performance_metrics(current_price, market_data, ytd_price)
@@ -75,6 +82,12 @@ def _render_header(name: str, price: float, df: pd.DataFrame, metrics: Tuple) ->
         Returns:
             None
         """
+    if df.empty or 'Close' not in df.columns:
+        raise KeyError(
+            f"The DataFrame for '{name}' is missing the required '{config.CLOSE_COLUMN}' column or is empty. "
+            f"Ensure the data_engine is returning a valid dataset with historical prices."
+        )
+
     clean_name = name.split(' (')[0]
     st.title(f"{clean_name} Analytics Dashboard")
 
@@ -109,6 +122,12 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
         Returns:
             None
         """
+    if not isinstance(current_price, (int, float)):
+        raise TypeError(
+            f"The 'current_price' parameter must be a numeric value, but {type(current_price).__name__} "
+            f"was provided. Value: {current_price}. Check data_engine output."
+        )
+
     st.markdown("### Market Signals")
     latest = market_df.iloc[-1]
 
@@ -159,7 +178,7 @@ def _render_fundamental_snapshot(df: pd.DataFrame) -> None:
         current = df['Close'].iloc[-1]
 
         # Calculate where we are in the 52-week range
-        range_pos = ((current - low_52w) / (high_52w - low_52w)) * 100
+        range_pos = ((current - low_52w) / (high_52w - low_52w)) * 100 if (high_52w - low_52w) != 0 else 0
 
         c1, c2 = st.columns(2)
         c1.caption("52W High")
@@ -226,7 +245,9 @@ def _render_chart_container(title: str, chart_type: str, key: str, ticker: str) 
         )
 
         df, _, _, _ = data_engine.fetch_market_dashboard_data(timeframe, ticker_symbol=ticker)
-        if df.empty: return
+        if df.empty:
+            st.warning(f"No chart data available for {ticker} at {timeframe} timeframe.")
+            return
 
         plot_data = df.tail(150).copy()
         fig = go.Figure()
