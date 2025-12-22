@@ -74,7 +74,7 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
     if not prediction.empty:
         target_price = prediction['Predicted'].iloc[-1]
         upside = ((target_price - current_price) / current_price) * 100
-        styles.render_intelligence_signal("TEMA ESTIMATED TARGET", f"${target_price:,.2f}", f"{upside:+.2f}%",
+        styles.render_intelligence_signal("ESTIMATED TARGET", f"${target_price:,.2f}", f"{upside:+.2f}%",
                                           styles.COLOR_GOLD)
 
     # 2. Strategy & Regime
@@ -90,7 +90,7 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
     res_gap = ((res_20d - current_price) / current_price) * 100
     styles.render_intelligence_signal("RESISTANCE GAP", f"{res_gap:.2f}%", "TO 20D HIGH", styles.HOLD_COLOR)
 
-    # --- ADDED: Fundamental Snapshot & Risk Boxes ---
+    #Fundamental Snapshot & Risk Boxes
     _render_fundamental_snapshot(market_df)
     _render_risk_analytics(market_df)
 
