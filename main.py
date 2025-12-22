@@ -1,8 +1,3 @@
-"""
-Main Application Module - TEMA Strategy Version (Clean Code Optimized).
-
-"""
-
 from typing import List, Dict, Any, Tuple
 import pandas as pd
 import plotly.graph_objects as go
@@ -16,7 +11,7 @@ from src.logic import trading_strategy
 # --- CONSTANTS ---
 DATE_FORMAT = '%Y-%m-%d %H:%M'
 
-
+# --- INITIALIZATION ---
 st.set_page_config(page_title="Multi-Asset Terminal Elite", layout="wide")
 styles.inject_terminal_stylesheet()
 
@@ -86,9 +81,11 @@ def _render_intelligence_center(market_df: pd.DataFrame, current_price: float) -
         styles.render_intelligence_signal("TEMA ESTIMATED TARGET", f"${target_price:,.2f}", f"{upside:+.2f}%", "#FFD700")
 
     # 2. Strategy & Regime
-    signal, color = trading_strategy.evaluate_market_signal(latest)
+    # CHANGED: We now pass the full market_df to allow 10-bar sequence analysis
+    signal, color = trading_strategy.evaluate_market_signal(market_df)
     styles.render_intelligence_signal("PRIMARY STRATEGY", signal, "LIVE", color)
 
+    # Note: We still use 'latest' here for the instant Trend Regime check
     is_bullish = current_price > latest['MA20'] > latest['MA50']
     regime_text, regime_color = ("BULLISH", "#00FF41") if is_bullish else ("BEARISH", "#FF3131")
     styles.render_intelligence_signal("MARKET REGIME", regime_text, "TREND", regime_color)
@@ -97,7 +94,6 @@ def _render_intelligence_center(market_df: pd.DataFrame, current_price: float) -
     res_20d = market_df['High'].tail(20).max()
     res_gap = ((res_20d - current_price) / current_price) * 100
     styles.render_intelligence_signal("RESISTANCE GAP", f"{res_gap:.2f}%", "TO 20D HIGH", "#00D4FF")
-
 
 def _render_all_charts(ticker: str) -> None:
     """Wrapper for categorical chart rendering."""
