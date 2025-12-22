@@ -1,5 +1,7 @@
 from typing import Dict, Final
 
+CLOSE_COLUMN: Final[str] = "Close"
+
 DEFAULT_INTERVAL_CODE = "1d"
 INTRADAY_INTERVAL_CODES = ["15m", "1h"]
 
