@@ -14,10 +14,11 @@ styles.inject_terminal_stylesheet()
 
 @st.fragment(run_every="1m")
 def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
+    #Logo setup
     col1, _ = st.columns([0.1, 0.9])
 
     with col1:
-        st.image("assets/logo.png", width=80)
+        st.image("assets/logo.png", width=160)
 
 #Orchestrates the data acquisition and UI rendering for the terminal
     market_data, current_price, news_list, ytd_price = data_engine.fetch_market_dashboard_data(
