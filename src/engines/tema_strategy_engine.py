@@ -26,43 +26,43 @@ def generate_tema_forecast(
     TEMA = (3 * EMA1) - (3 * EMA2) + EMA3
     This provides a much faster response to price changes than a standard SMA.
     """
-    if market_dataframe.empty:
-        return pd.DataFrame()
+    forecast_results = pd.DataFrame()
 
-    # 1. Calculate TEMA components
-    # We use a 20-period window for the primary trend
-    close_prices = market_dataframe[CLOSE_COLUMN]
+    if not market_dataframe.empty:
+        # 1. Calculate TEMA components
+        close_prices = market_dataframe[CLOSE_COLUMN]
 
-    ema1 = close_prices.ewm(span=TEMA_SPAN, adjust=False).mean()
-    ema2 = ema1.ewm(span=TEMA_SPAN, adjust=False).mean()
-    ema3 = ema2.ewm(span=TEMA_SPAN, adjust=False).mean()
+        ema1 = close_prices.ewm(span=TEMA_SPAN, adjust=False).mean()
+        ema2 = ema1.ewm(span=TEMA_SPAN, adjust=False).mean()
+        ema3 = ema2.ewm(span=TEMA_SPAN, adjust=False).mean()
 
-    tema = (3 * ema1) - (3 * ema2) + ema3
+        tema = (3 * ema1) - (3 * ema2) + ema3
 
-    # 2. Calculate the "Trend Velocity"
-    # We look at the slope of the TEMA over the last 5 periods
-    latest_tema = tema.iloc[-1]
-    previous_tema = tema.iloc[-VELOCITY_LOOKBACK_PERIODS]
-    tema_velocity = (latest_tema - previous_tema) / VELOCITY_LOOKBACK_PERIODS
+        # 2. Calculate the "Trend Velocity"
+        latest_tema = tema.iloc[-1]
+        effective_lookback = min(VELOCITY_LOOKBACK_PERIODS, len(tema) - 1)  # #68: avoid IndexError on short series
+        if effective_lookback < 1:
+            tema_velocity = 0.0
+        else:
+            previous_tema = tema.iloc[-effective_lookback - 1]
+            tema_velocity = (latest_tema - previous_tema) / effective_lookback
 
-    # 3. Project Future Path
-    latest_price = float(close_prices.iloc[-1])
+        # 3. Project Future Path
+        latest_price = float(close_prices.iloc[-1])
 
-    # The forecast follows the TEMA trajectory
-    forecast_path = []
-    for step in range(1, forecast_steps + 1):
-        # We blend the current price with the projected TEMA velocity
-        projected_point = latest_price + (tema_velocity * step)
-        forecast_path.append(projected_point)
+        forecast_path = []
+        for step in range(1, forecast_steps + 1):
+            projected_point = latest_price + (tema_velocity * step)
+            forecast_path.append(projected_point)
 
-    # 4. Generate Timestamps
-    future_dates = _calculate_future_indices(market_dataframe, forecast_steps)
+        # 4. Generate Timestamps
+        future_dates = _calculate_future_indices(market_dataframe, forecast_steps)
 
-    # 5. Assemble Result
-    forecast_results = pd.concat([
-        pd.DataFrame({PREDICTED_COLUMN: [latest_price]}, index=[market_dataframe.index[-1]]),
-        pd.DataFrame({PREDICTED_COLUMN: forecast_path}, index=future_dates)
-    ])
+        # 5. Assemble Result
+        forecast_results = pd.concat([
+            pd.DataFrame({PREDICTED_COLUMN: [latest_price]}, index=[market_dataframe.index[-1]]),
+            pd.DataFrame({PREDICTED_COLUMN: forecast_path}, index=future_dates)
+        ])
 
     return forecast_results
 
@@ -77,4 +77,5 @@ def _calculate_future_indices(df: pd.DataFrame, steps: int) -> pd.DatetimeIndex:
         )[1:]
 
     delta = df.index[-1] - df.index[-2]
-    return [df.index[-1] + (i * delta) for i in range(1, steps + 1)]
+    return pd.DatetimeIndex([df.index[-1] + (i * delta) for i in range(1, steps + 1)])  # C2/C5: consistent return type
+
