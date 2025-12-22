@@ -10,7 +10,7 @@ from src.logic import trading_strategy
 
 
 #Initialize
-st.set_page_config(page_title="Multi-Asset Terminal Elite", layout="wide")
+st.set_page_config(page_title="Multi-Asset Analytics Dashboard", layout="wide")
 styles.inject_terminal_stylesheet()
 
 @st.fragment(run_every="1m")
@@ -76,20 +76,20 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
         target_price = prediction['Predicted'].iloc[-1]
         upside = ((target_price - current_price) / current_price) * 100
         styles.render_intelligence_signal("TEMA ESTIMATED TARGET", f"${target_price:,.2f}", f"{upside:+.2f}%",
-                                          "#FFD700")
+                                          styles.COLOR_GOLD)
 
     # 2. Strategy & Regime
     signal, color = trading_strategy.evaluate_market_signal(market_df)
     styles.render_intelligence_signal("PRIMARY STRATEGY", signal, "LIVE", color)
 
     is_bullish = current_price > latest['MA20'] > latest['MA50']
-    regime_text, regime_color = ("BULLISH", "#00FF41") if is_bullish else ("BEARISH", "#FF3131")
+    regime_text, regime_color = ("BULLISH", styles.SUCCESS_COLOR) if is_bullish else ("BEARISH", styles.DANGER_COLOR)
     styles.render_intelligence_signal("MARKET REGIME", regime_text, "TREND", regime_color)
 
     # 3. Structural Analysis
     res_20d = market_df['High'].tail(20).max()
     res_gap = ((res_20d - current_price) / current_price) * 100
-    styles.render_intelligence_signal("RESISTANCE GAP", f"{res_gap:.2f}%", "TO 20D HIGH", "#00D4FF")
+    styles.render_intelligence_signal("RESISTANCE GAP", f"{res_gap:.2f}%", "TO 20D HIGH", styles.HOLD_COLOR)
 
 def _render_all_charts(ticker: str) -> None:
     """Wrapper for categorical chart rendering."""
@@ -166,15 +166,15 @@ def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> N
         fig.add_trace(go.Candlestick(x=idx, open=data['Open'], high=data['High'], low=data['Low'], close=data['Close'],
                                      name="Price"))
     else:
-        fig.add_trace(go.Scatter(x=idx, y=data['Close'], line=dict(color='#FFFFFF', width=2), name="Price (Line)"))
+        fig.add_trace(go.Scatter(x=idx, y=data['Close'], line=dict(color=styles.COLOR_WHITE, width=2), name="Price (Line)"))
 
-    fig.add_trace(go.Scatter(x=idx, y=data['MA20'], line=dict(color='#00D4FF', width=1.5), name="MA20"))
-    fig.add_trace(go.Scatter(x=idx, y=data['MA50'], line=dict(color='#FF8C00', width=1.5), name="MA50"))
+    fig.add_trace(go.Scatter(x=idx, y=data['MA20'], line=dict(color=styles.HOLD_COLOR, width=1.5), name="MA20"))
+    fig.add_trace(go.Scatter(x=idx, y=data['MA50'], line=dict(color=styles.MACD_COLOR, width=1.5), name="MA50"))
 
     # 3. Forecast & Signals
     if not forecast.empty:
         f_idx = forecast.index.strftime(config.DATE_FORMAT)
-        fig.add_scatter(x=f_idx, y=forecast['Predicted'], line=dict(color='#FFD700', width=3, dash='dashdot'),
+        fig.add_scatter(x=f_idx, y=forecast['Predicted'], line=dict(color=styles.COLOR_GOLD, width=3, dash='dashdot'),
                         name="TEMA Trend")
 
     _add_signal_markers(fig, data, idx)
@@ -183,10 +183,10 @@ def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> N
 
 def _add_signal_markers(fig: go.Figure, data: pd.DataFrame, idx: pd.Index) -> None:
     """Helper to cleanly place Buy/Sell triangles on the chart."""
-    buffer = (data['High'].max() - data['Low'].min()) * 0.02
+    buffer = (data['High'].max() - data['Low'].min()) * 0.02 #2% buffer to avoid the overlap on the chart
 
-    for sig_type, symbol, color, col in [('Buy', 'triangle-up', '#00FF41', 'Low'),
-                                         ('Sell', 'triangle-down', '#FF3131', 'High')]:
+    for sig_type, symbol, color, col in [('Buy', 'triangle-up', styles.SUCCESS_COLOR, 'Low'),
+                                         ('Sell', 'triangle-down', styles.DANGER_COLOR, 'High')]:
         mask = data[f'{sig_type}_Signal']
         y_pos = data[col] - buffer if sig_type == 'Buy' else data[col] + buffer
         fig.add_trace(go.Scatter(
@@ -197,14 +197,14 @@ def _add_signal_markers(fig: go.Figure, data: pd.DataFrame, idx: pd.Index) -> No
 
 def _plot_volume_layer(fig: go.Figure, data: pd.DataFrame) -> None:
     idx = data.index.strftime(config.DATE_FORMAT)
-    colors = ['#00FF41' if c >= o else '#FF3131' for c, o in zip(data['Close'], data['Open'])]
+    colors = [styles.SUCCESS_COLOR if c >= o else styles.DANGER_COLOR for c, o in zip(data['Close'], data['Open'])]
     fig.add_bar(x=idx, y=data['Volume'], marker_color=colors)
     fig.update_layout(height=150)
 
 
 def _plot_rsi_layer(fig: go.Figure, data: pd.DataFrame) -> None:
     idx = data.index.strftime(config.DATE_FORMAT)
-    fig.add_scatter(x=idx, y=data['RSI'], line=dict(color='#BB86FC'))
+    fig.add_scatter(x=idx, y=data['RSI'], line=dict(color=styles.RSI_COLOR))
     fig.add_hline(y=config.IndicatorSettings.RSI_OVERBOUGHT_LEVEL, line_color="red", line_dash="dash")
     fig.add_hline(y=config.IndicatorSettings.RSI_OVERSOLD_LEVEL, line_color="green", line_dash="dash")
     fig.update_layout(height=150, yaxis=dict(range=[0, 100]))
@@ -212,14 +212,14 @@ def _plot_rsi_layer(fig: go.Figure, data: pd.DataFrame) -> None:
 
 def _plot_macd_layer(fig: go.Figure, data: pd.DataFrame) -> None:
     idx = data.index.strftime(config.DATE_FORMAT)
-    colors = ['#00FF41' if x >= 0 else '#FF3131' for x in data['MACD_Hist']]
+    colors = [styles.SUCCESS_COLOR if x >= 0 else styles.DANGER_COLOR for x in data['MACD_Hist']]
     fig.add_bar(x=idx, y=data['MACD_Hist'], marker_color=colors)
     fig.update_layout(height=150)
 
 
 def _render_news_sentiment_feed(news: List[Dict], asset_name: str) -> None:
     st.divider()
-    st.subheader(f"📰 {asset_name.split(' (')[0]} Market Sentiment")
+    st.subheader(f"{asset_name.split(' (')[0]} Market News")
     if not news:
         st.info("No news items found.")
         return
