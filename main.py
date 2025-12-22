@@ -105,9 +105,9 @@ def _render_header(name: str, price: float, df: pd.DataFrame, metrics: Tuple) ->
         ("Volatility", metrics[3], True)
     ]
 
-    for i, (label, value, is_vol) in enumerate(metric_configs, 1):
+    for i, (label, value, is_volatility) in enumerate(metric_configs, 1):
         styles.render_colored_performance_metric(
-            metric_columns[i], label, f"{value:+.2f}%" if not is_vol else f"{value:.2f}%", value, is_volatility=is_vol
+            metric_columns[i], label, f"{value:+.2f}%" if not is_volatility else f"{value:.2f}%", value, is_volatility=is_volatility
         )
 
 
