@@ -356,7 +356,6 @@ def _render_news_sentiment_feed(news: List[Dict], asset_name: str) -> None:
 
 
 if __name__ == "__main__":
-    """Main execution block for the Streamlit application"""
     st.sidebar.markdown('<div class="sidebar-header-branding">TERMINAL</div>', unsafe_allow_html=True)
     asset_label = st.sidebar.selectbox("Select Asset", options=list(config.ASSET_MAPPING.keys()), index=0)
     render_live_dashboard(config.ASSET_MAPPING[asset_label], asset_label)
