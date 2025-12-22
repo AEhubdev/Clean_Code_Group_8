@@ -11,11 +11,11 @@ import yfinance as yf
 import streamlit as st
 
 import config
-# Step 1 (C2/C5): avoid magic strings/lists; make choices explicit
+
 
 
 def _get_history_period(interval_code: str) -> str:
-    """(Step 3 / S2) Determine yfinance lookback period for a given interval code."""
+    """Determine yfinance lookback period for a given interval code."""
     if interval_code in config.INTRADAY_INTERVAL_CODES:
         return "60d"
     if interval_code == "1wk":
@@ -24,7 +24,7 @@ def _get_history_period(interval_code: str) -> str:
 
 
 def _normalize_market_dataframe(market_dataframe: pd.DataFrame) -> pd.DataFrame:
-    """(Step 3B / S2/C5) Clean yfinance dataframe and keep required OHLCV columns."""
+    """ Clean yfinance dataframe and keep required OHLCV columns."""
     if market_dataframe.empty:
         return market_dataframe
 
@@ -52,11 +52,11 @@ def fetch_market_dashboard_data(
     Returns:
         A tuple containing the processed DataFrame, current price, news list, and YTD start price.
     """
-    interval_code = config.AVAILABLE_TIMEFRAMES.get(timeframe_label, config.DEFAULT_INTERVAL_CODE)  # C2/C5: avoid magic string
+    interval_code = config.AVAILABLE_TIMEFRAMES.get(timeframe_label, config.DEFAULT_INTERVAL_CODE)  #: avoid magic string
 
 
     # Define data lookback period based on interval granularity
-    data_history_period = _get_history_period(interval_code)  # Step 3 (S2/C2): extracted helper
+    data_history_period = _get_history_period(interval_code)  # Step 3: extracted helper
 
     market_dataframe = yf.download(
         tickers=ticker_symbol,
@@ -69,7 +69,7 @@ def fetch_market_dashboard_data(
         return pd.DataFrame(), 0.0, [], 0.0
 
     # Clean multi-index columns from yfinance (C5: Well-formatted)
-    market_dataframe = _normalize_market_dataframe(market_dataframe)  # Step 3B (S2/C5)
+    market_dataframe = _normalize_market_dataframe(market_dataframe)  # Step 3B
     if market_dataframe.empty:
         return pd.DataFrame(), 0.0, [], 0.0
 
@@ -83,7 +83,7 @@ def fetch_market_dashboard_data(
 
 
 def _enrich_with_technical_indicators(dataframe: pd.DataFrame) -> pd.DataFrame:
-    """Calculates technical overlays and oscillators (S2: Single Responsibility)."""
+    """Calculates technical overlays and oscillators."""
     settings = config.IndicatorSettings
     dataframe = dataframe.copy()  # #18 Immutability: avoid mutating caller dataframe
 
@@ -123,7 +123,7 @@ def _calculate_period_return(
         history_df: pd.DataFrame,
         lookback_days: int
 ) -> float:
-    """(#16 No nested functions) Compute percentage return over lookback trading days."""
+    """Compute percentage return over lookback trading days."""
     if len(history_df) > lookback_days:
         previous_price = history_df["Close"].iloc[-lookback_days]
         return ((current_price - previous_price) / previous_price) * 100
