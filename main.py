@@ -91,6 +91,18 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
     res_gap = ((res_20d - current_price) / current_price) * 100
     styles.render_intelligence_signal("RESISTANCE GAP", f"{res_gap:.2f}%", "TO 20D HIGH", styles.HOLD_COLOR)
 
+    with st.expander("ℹ️ Signal Definitions"):
+        st.markdown(f"""
+            <div style="font-size: 0.85rem; color: {styles.TEXT_SUBDUED};">
+                <b>TEMA TARGET:</b> Price prediction based on Triple Exponential Moving Averages.<br><br>
+                <b>PRIMARY STRATEGY:</b> Current actionable signal (Buy/Sell/Hold) derived from momentum and trend alignment.<br><br>
+                <b>MARKET REGIME:</b> Global trend state. Bullish if price is above key Moving Averages (MA20/MA50).<br><br>
+                <b>RESISTANCE GAP:</b> Percentage distance to the 20-day high. Low values suggest a breakout is near.
+            </div>
+        """, unsafe_allow_html=True)
+
+    latest = market_df.iloc[-1]
+
 def _render_all_charts(ticker: str) -> None:
     """Wrapper for categorical chart rendering."""
     chart_definitions = [
