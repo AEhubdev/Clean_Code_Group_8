@@ -34,9 +34,9 @@ def inject_terminal_stylesheet() -> None:
             color: {COLOR_WHITE} !important; 
             font-size: 28px !important; 
             font-weight: bold; 
-            text-align: center; 
+            text-align: left; 
             margin-bottom: 20px; 
-            border-bottom: 2px solid {COLOR_GOLD}; 
+            border-bottom: 2px solid; 
             padding-bottom: 10px; 
         }}
 
