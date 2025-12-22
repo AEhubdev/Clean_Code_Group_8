@@ -8,11 +8,16 @@ TEXT_SUBDUED = "#808495"
 SUCCESS_COLOR = "#00FF41"
 DANGER_COLOR = "#FF3131"
 WARNING_COLOR = "#FFA500"
+HOLD_COLOR = "#00D4FF"
+RSI_COLOR = "#BB86FC"
+MACD_COLOR = "#FF8C00"
 
 # Fixed Hex Codes for consistency
 COLOR_WHITE = "#FFFFFF"
 COLOR_GOLD = "#FFD700"
 
+BB_LINE_COLOR = 'rgba(173, 216, 230, 0.2)'
+BB_FILL_COLOR = 'rgba(173, 216, 230, 0.05)'
 
 def inject_terminal_stylesheet() -> None:
     st.markdown(f"""
