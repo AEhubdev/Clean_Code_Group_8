@@ -1,27 +1,19 @@
-"""
-Configuration module for the Multi-Asset Terminal.
-Defines technical indicators, asset mappings, and UI constants.
-"""
-
 from typing import Dict, Final
 
-# --- ASSET CONFIGURATION ---
-# C1: Accurate names instead of abbreviations like GC=F
+# Mapping short names with full names
 ASSET_MAPPING: Final[Dict[str, str]] = {
     "Gold (GC=F)": "GC=F",
     "S&P 500 (^GSPC)": "^GSPC",
-    "Bitcoin (BTC-USD)": "BTC-USD"
+    "Bitcoin (BTC-USD)": "BTC-USD",
+    "Ethereum (ETH-USD)": "ETH-USD"
 }
-
+#Setting the default Dashboard view
 DEFAULT_SYMBOL: Final[str] = "GC=F"
 DEFAULT_DATA_INTERVAL: Final[str] = "1d"
 
 
-# --- TECHNICAL INDICATOR PARAMETERS ---
-# C1: Full names (Bollinger Bands instead of BB)
-# C2: Straightforward groupings
+#Technical indicator setup
 class IndicatorSettings:
-    """Standardized periods and thresholds for technical analysis indicators."""
 
     # Relative Strength Index (RSI)
     RSI_PERIOD: int = 14
@@ -39,9 +31,8 @@ class IndicatorSettings:
     MOVING_AVERAGE_LONG_TERM: int = 50
 
 
-# --- USER INTERFACE SETTINGS ---
+#Interface setup
 class LayoutSettings:
-    """Constants for chart dimensions and display options."""
     MAIN_CHART_HEIGHT: int = 500
     INDICATOR_CHART_HEIGHT: int = 150
 
