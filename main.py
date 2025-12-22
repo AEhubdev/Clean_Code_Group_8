@@ -14,6 +14,22 @@ styles.inject_terminal_stylesheet()
 
 @st.fragment(run_every="1m")
 def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
+    """
+        Orchestrates the data acquisition and UI rendering for the main dashboard.
+
+        This function acts as the primary entry point for the live-updating portion of
+        the application, handling data fetching, metric calculation, and layout dispatching.
+
+        Args:
+            ticker_symbol (str): The financial ticker symbol (e.g., 'BTC-USD').
+            asset_display_name (str): The human-readable name for the sidebar UI.
+
+        Returns:
+            None: Renders the UI directly to the Streamlit app.
+
+        Example:
+            >>> render_live_dashboard("GC=F", "Gold")
+        """
     #Logo setup
     col1, _ = st.columns([0.1, 0.9])
 
@@ -47,7 +63,18 @@ def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
 
 
 def _render_header(name: str, price: float, df: pd.DataFrame, metrics: Tuple) -> None:
-    """Displays the asset title and top-level metric row."""
+    """
+        Displays the asset title and top-level metric row.
+
+        Args:
+            name (str): Full asset name.
+            price (float): Current live price.
+            df (pd.DataFrame): Historical market data.
+            metrics (Tuple): Calculated performance percentages (Weekly, Monthly, etc.).
+
+        Returns:
+            None
+        """
     clean_name = name.split(' (')[0]
     st.title(f"{clean_name} Analytics Dashboard")
 
@@ -72,6 +99,16 @@ def _render_header(name: str, price: float, df: pd.DataFrame, metrics: Tuple) ->
 
 
 def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> None:
+    """
+        Renders the intelligence signals and risk cards in the right-hand sidebar column.
+
+        Args:
+            market_df (pd.DataFrame): Processed market data containing indicators.
+            current_price (float): The most recent asset price.
+
+        Returns:
+            None
+        """
     st.markdown("### Market Signals")
     latest = market_df.iloc[-1]
 
@@ -167,7 +204,18 @@ def _render_all_charts(ticker: str) -> None:
 
 
 def _render_chart_container(title: str, chart_type: str, key: str, ticker: str) -> None:
-    """Generic container with added toggles for Price chart types."""
+    """
+        Creates a UI container with toggles for chart types and timeframes.
+
+        Args:
+            title (str): Display title for the chart.
+            chart_type (str): Type identifier (price, rsi, etc.).
+            key (str): Unique Streamlit key for widgets.
+            ticker (str): Asset ticker symbol.
+
+        Returns:
+            None
+        """
     with st.container(border=True):
         header_col, type_col, selector_col = st.columns([0.5, 0.2, 0.3])
         header_col.markdown(f"**{title}**")
@@ -257,7 +305,7 @@ def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> N
 
 
 def _add_signal_markers(fig: go.Figure, data: pd.DataFrame, idx: pd.Index) -> None:
-    """Helper to cleanly place Buy/Sell triangles on the chart."""
+    """Sets the triangle signals on the chart"""
     buffer = (data['High'].max() - data['Low'].min()) * 0.02  # 2% buffer to avoid the overlap on the chart
 
     for sig_type, symbol, color, col in [('Buy', 'triangle-up', styles.SUCCESS_COLOR, 'Low'),
@@ -271,6 +319,7 @@ def _add_signal_markers(fig: go.Figure, data: pd.DataFrame, idx: pd.Index) -> No
 
 
 def _plot_volume_layer(fig: go.Figure, data: pd.DataFrame) -> None:
+    """Draws color-coded volume bars"""
     idx = data.index.strftime(config.DATE_FORMAT)
     colors = [styles.SUCCESS_COLOR if c >= o else styles.DANGER_COLOR for c, o in zip(data['Close'], data['Open'])]
     fig.add_bar(x=idx, y=data['Volume'], marker_color=colors)
@@ -278,6 +327,7 @@ def _plot_volume_layer(fig: go.Figure, data: pd.DataFrame) -> None:
 
 
 def _plot_rsi_layer(fig: go.Figure, data: pd.DataFrame) -> None:
+    """Draws RSI line and overbought/oversold thresholds"""
     idx = data.index.strftime(config.DATE_FORMAT)
     fig.add_scatter(x=idx, y=data['RSI'], line=dict(color=styles.RSI_COLOR))
     fig.add_hline(y=config.IndicatorSettings.RSI_OVERBOUGHT_LEVEL, line_color="red", line_dash="dash")
@@ -286,6 +336,7 @@ def _plot_rsi_layer(fig: go.Figure, data: pd.DataFrame) -> None:
 
 
 def _plot_macd_layer(fig: go.Figure, data: pd.DataFrame) -> None:
+    """Draws the MACD histogram"""
     idx = data.index.strftime(config.DATE_FORMAT)
     colors = [styles.SUCCESS_COLOR if x >= 0 else styles.DANGER_COLOR for x in data['MACD_Hist']]
     fig.add_bar(x=idx, y=data['MACD_Hist'], marker_color=colors)
@@ -293,6 +344,7 @@ def _plot_macd_layer(fig: go.Figure, data: pd.DataFrame) -> None:
 
 
 def _render_news_sentiment_feed(news: List[Dict], asset_name: str) -> None:
+    """Renders a list of clickable market news headlines"""
     st.divider()
     st.subheader(f"{asset_name.split(' (')[0]} Market News")
     if not news:
@@ -304,6 +356,7 @@ def _render_news_sentiment_feed(news: List[Dict], asset_name: str) -> None:
 
 
 if __name__ == "__main__":
+    """Main execution block for the Streamlit application"""
     st.sidebar.markdown('<div class="sidebar-header-branding">TERMINAL</div>', unsafe_allow_html=True)
     asset_label = st.sidebar.selectbox("Select Asset", options=list(config.ASSET_MAPPING.keys()), index=0)
     render_live_dashboard(config.ASSET_MAPPING[asset_label], asset_label)
