@@ -103,6 +103,17 @@ def _enrich_with_technical_indicators(dataframe: pd.DataFrame) -> pd.DataFrame:
 
     return dataframe
 
+def _calculate_period_return(
+        current_price: float,
+        history_df: pd.DataFrame,
+        lookback_days: int
+) -> float:
+    """(#16 No nested functions) Compute percentage return over lookback trading days."""
+    if len(history_df) > lookback_days:
+        previous_price = history_df["Close"].iloc[-lookback_days]
+        return ((current_price - previous_price) / previous_price) * 100
+    return 0.0
+
 
 def calculate_performance_metrics(
         current_price: float,
@@ -115,22 +126,14 @@ def calculate_performance_metrics(
     Returns:
         Tuple: (Weekly Return, Monthly Return, YTD Return, Annualized Volatility)
     """
-
-    def calculate_period_return(lookback_days: int) -> float:
-        """Helper to compute percentage return over specific periods."""
-        if len(history_df) > lookback_days:
-            previous_price = history_df['Close'].iloc[-lookback_days]
-            return ((current_price - previous_price) / previous_price) * 100
-        return 0.0
-
     # Risk Metrics: Annualized Volatility (30-day window)
-    daily_returns = history_df['Close'].pct_change().tail(30)
+    daily_returns = history_df["Close"].pct_change().tail(30)
     annualized_volatility = daily_returns.std() * (252 ** 0.5) * 100
 
     # Return Metrics
-    weekly_return = calculate_period_return(5)
-    monthly_return = calculate_period_return(21)
-    year_to_date_return = ((current_price - ytd_start_price) / ytd_start_price) * 100
+    weekly_return = _calculate_period_return(current_price, history_df, 5)   # #16
+    monthly_return = _calculate_period_return(current_price, history_df, 21) # #16
+    year_to_date_return = ((current_price - ytd_start_price) / ytd_start_price) * 100 if ytd_start_price else 0.0
 
     return weekly_return, monthly_return, year_to_date_return, annualized_volatility
 
