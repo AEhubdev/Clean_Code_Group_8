@@ -22,7 +22,7 @@ def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
 
 #Orchestrates the data acquisition and UI rendering for the terminal
     market_data, current_price, news_list, ytd_price = data_engine.fetch_market_dashboard_data(
-        timeframe_label="1 Day",
+        timeframe_label=config.AVAILABLE_TIMEFRAMES["1 Day"],
         ticker_symbol=ticker_symbol
     )
 
