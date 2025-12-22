@@ -9,7 +9,7 @@ from src.ui import styles
 from src.logic import trading_strategy
 
 
-# --- INITIALIZATION ---
+#Initialize
 st.set_page_config(page_title="Multi-Asset Terminal Elite", layout="wide")
 styles.inject_terminal_stylesheet()
 
@@ -36,7 +36,7 @@ def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
         _render_all_charts(ticker_symbol)
 
     with intelligence_col:
-        _render_intelligence_center(market_data, current_price)
+        _render_market_signals(market_data, current_price)
 
     _render_news_sentiment_feed(news_list, asset_display_name)
 
@@ -44,7 +44,7 @@ def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
 def _render_header(name: str, price: float, df: pd.DataFrame, metrics: Tuple) -> None:
     """Displays the asset title and top-level metric row."""
     clean_name = name.split(' (')[0]
-    st.title(f"🏆 {clean_name} Terminal Elite")
+    st.title(f"{clean_name} Analytics Dashboard")
 
     yesterday_close = df['Close'].iloc[-2] if len(df) > 1 else price
     daily_delta = ((price - yesterday_close) / yesterday_close) * 100
@@ -66,9 +66,8 @@ def _render_header(name: str, price: float, df: pd.DataFrame, metrics: Tuple) ->
         )
 
 
-def _render_intelligence_center(market_df: pd.DataFrame, current_price: float) -> None:
-    """Renders the AI/Strategy signal column."""
-    st.markdown("### 🚦 Intelligence Center")
+def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> None:
+    st.markdown("### Market Signals")
     latest = market_df.iloc[-1]
 
     # 1. TEMA Prediction
