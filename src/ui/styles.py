@@ -36,7 +36,7 @@ def inject_terminal_stylesheet() -> None:
             font-weight: bold; 
             text-align: center; 
             margin-bottom: 20px; 
-            border-bottom: 2px solid {COLOR_GOLD}; 
+            border-bottom: 2px solid {SECONDARY_UI_COLOR}; 
             padding-bottom: 10px; 
         }}
 
