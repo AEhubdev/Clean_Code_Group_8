@@ -4,7 +4,8 @@ from typing import Dict, Final
 ASSET_MAPPING: Final[Dict[str, str]] = {
     "Gold (GC=F)": "GC=F",
     "S&P 500 (^GSPC)": "^GSPC",
-    "Bitcoin (BTC-USD)": "BTC-USD"
+    "Bitcoin (BTC-USD)": "BTC-USD",
+    "Ethereum (ETH-USD)": "ETH-USD"
 }
 #Setting the default Dashboard view
 DEFAULT_SYMBOL: Final[str] = "GC=F"
