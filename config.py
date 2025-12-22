@@ -1,5 +1,7 @@
 from typing import Dict, Final
 
+DATE_FORMAT = '%Y-%m-%d %H:%M'
+
 # Mapping short names with full names
 ASSET_MAPPING: Final[Dict[str, str]] = {
     "Gold (GC=F)": "GC=F",

@@ -8,8 +8,6 @@ from src.engines import data_engine, tema_strategy_engine
 from src.ui import styles
 from src.logic import trading_strategy
 
-# --- CONSTANTS ---
-DATE_FORMAT = '%Y-%m-%d %H:%M'
 
 # --- INITIALIZATION ---
 st.set_page_config(page_title="Multi-Asset Terminal Elite", layout="wide")
@@ -157,7 +155,7 @@ def _dispatch_chart_type(fig: go.Figure, data: pd.DataFrame, chart_type: str, pr
 def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> None:
     """Main price action layer with conditional rendering for Candlestick vs Line."""
     forecast = tema_strategy_engine.generate_tema_forecast(data)
-    idx = data.index.strftime(DATE_FORMAT)
+    idx = data.index.strftime(config.DATE_FORMAT)
 
     # 1. Structural Bands
     fig.add_scatter(x=idx, y=data['BB_U'], line=dict(color='rgba(173, 216, 230, 0.2)', width=1), name="BB Upper")
