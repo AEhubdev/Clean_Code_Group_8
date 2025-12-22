@@ -183,6 +183,7 @@ def _fetch_asset_news(ticker: str) -> List[Dict[str, Any]]:
     try:
         search_engine = yf.Search(ticker, news_count=5)
         return search_engine.news
-    except Exception:
-        # #68: clear fallback (keep behavior: return empty list)
+    except Exception as exc:
+        # #68 Clear exceptions: keep behavior; optionally log `exc` for debugging.
         return []
+
