@@ -11,6 +11,9 @@ import yfinance as yf
 import streamlit as st
 
 import config
+# Step 1 (C2/C5): avoid magic strings/lists; make choices explicit
+DEFAULT_INTERVAL_CODE = "1d"
+INTRADAY_INTERVAL_CODES = ["15m", "1h"]
 
 
 @st.cache_data(ttl=60)
@@ -28,10 +31,12 @@ def fetch_market_dashboard_data(
     Returns:
         A tuple containing the processed DataFrame, current price, news list, and YTD start price.
     """
-    interval_code = config.AVAILABLE_TIMEFRAMES.get(timeframe_label, "1d")
+    interval_code = config.AVAILABLE_TIMEFRAMES.get(timeframe_label, DEFAULT_INTERVAL_CODE)  # C2/C5: avoid magic string
+
 
     # Define data lookback period based on interval granularity
-    if interval_code in ["15m", "1h"]:
+    if interval_code in INTRADAY_INTERVAL_CODES:
+
         data_history_period = "60d"
     elif interval_code == "1wk":
         data_history_period = "10y"
