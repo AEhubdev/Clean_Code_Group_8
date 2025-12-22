@@ -15,6 +15,7 @@ import config
 DEFAULT_INTERVAL_CODE = "1d"
 INTRADAY_INTERVAL_CODES = ["15m", "1h"]
 
+
 def _get_history_period(interval_code: str) -> str:
     """(Step 3 / S2) Determine yfinance lookback period for a given interval code."""
     if interval_code in INTRADAY_INTERVAL_CODES:
@@ -23,6 +24,19 @@ def _get_history_period(interval_code: str) -> str:
         return "10y"
     return "max"
 
+
+def _normalize_market_dataframe(market_dataframe: pd.DataFrame) -> pd.DataFrame:
+    """(Step 3B / S2/C5) Clean yfinance dataframe and keep required OHLCV columns."""
+    if market_dataframe.empty:
+        return market_dataframe
+
+    # yfinance sometimes returns MultiIndex columns (e.g., when grouping tickers)
+    if isinstance(market_dataframe.columns, pd.MultiIndex):
+        market_dataframe = market_dataframe.copy()  # #18: avoid mutating external ref
+        market_dataframe.columns = market_dataframe.columns.get_level_values(0)
+
+    market_dataframe = market_dataframe.ffill().dropna()
+    return market_dataframe[["Open", "High", "Low", "Close", "Volume"]]
 
 
 @st.cache_data(ttl=60)
@@ -57,11 +71,9 @@ def fetch_market_dashboard_data(
         return pd.DataFrame(), 0.0, [], 0.0
 
     # Clean multi-index columns from yfinance (C5: Well-formatted)
-    if isinstance(market_dataframe.columns, pd.MultiIndex):
-        market_dataframe.columns = market_dataframe.columns.get_level_values(0)
-
-    market_dataframe = market_dataframe.ffill().dropna()
-    market_dataframe = market_dataframe[['Open', 'High', 'Low', 'Close', 'Volume']]
+    market_dataframe = _normalize_market_dataframe(market_dataframe)  # Step 3B (S2/C5)
+    if market_dataframe.empty:
+        return pd.DataFrame(), 0.0, [], 0.0
 
     market_dataframe = _enrich_with_technical_indicators(market_dataframe)
 
@@ -75,6 +87,7 @@ def fetch_market_dashboard_data(
 def _enrich_with_technical_indicators(dataframe: pd.DataFrame) -> pd.DataFrame:
     """Calculates technical overlays and oscillators (S2: Single Responsibility)."""
     settings = config.IndicatorSettings
+    dataframe = dataframe.copy()  # #18 Immutability: avoid mutating caller dataframe
 
     # 1. Trend Indicators (Moving Averages)
     dataframe['MA20'] = dataframe['Close'].rolling(window=settings.BOLLINGER_BANDS_PERIOD).mean()
@@ -105,6 +118,7 @@ def _enrich_with_technical_indicators(dataframe: pd.DataFrame) -> pd.DataFrame:
     dataframe['Sell_Signal'] = (dataframe['RSI'] > settings.RSI_BEARISH_THRESHOLD) & (dataframe['MACD_Hist'] < 0)
 
     return dataframe
+
 
 def _calculate_period_return(
         current_price: float,
