@@ -157,10 +157,21 @@ def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> N
     idx = data.index.strftime(config.DATE_FORMAT)
 
     # 1. Structural Bands
-    fig.add_scatter(x=idx, y=data['BB_U'], line=dict(color='rgba(173, 216, 230, 0.2)', width=1), name="BB Upper")
-    fig.add_scatter(x=idx, y=data['BB_L'], line=dict(color='rgba(173, 216, 230, 0.2)', width=1),
-                    fill='tonexty', fillcolor='rgba(173, 216, 230, 0.05)', name="BB Lower")
+    fig.add_scatter(
+        x=idx,
+        y=data['BB_U'],
+        line=dict(color=config.BB_LINE_COLOR, width=1),
+        name="BB Upper"
+    )
 
+    fig.add_scatter(
+        x=idx,
+        y=data['BB_L'],
+        line=dict(color=config.BB_LINE_COLOR, width=1),
+        fill='tonexty',
+        fillcolor=config.BB_FILL_COLOR,
+        name="BB Lower"
+    )
     # 2. Price Representation
     if price_style == "Candlestick":
         fig.add_trace(go.Candlestick(x=idx, open=data['Open'], high=data['High'], low=data['Low'], close=data['Close'],

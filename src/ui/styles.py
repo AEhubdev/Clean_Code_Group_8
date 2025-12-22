@@ -16,6 +16,8 @@ MACD_COLOR = "#FF8C00"
 COLOR_WHITE = "#FFFFFF"
 COLOR_GOLD = "#FFD700"
 
+BB_LINE_COLOR = 'rgba(173, 216, 230, 0.2)'
+BB_FILL_COLOR = 'rgba(173, 216, 230, 0.05)'
 
 def inject_terminal_stylesheet() -> None:
     st.markdown(f"""
