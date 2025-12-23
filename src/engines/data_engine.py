@@ -248,3 +248,26 @@ def prepare_header_metrics(name: str, price: float, df: pd.DataFrame, performanc
         "ytd": performance[2],
         "volatility": performance[3]
     }
+
+def calculate_fundamental_snapshot(df: pd.DataFrame) -> Dict:
+    """
+    Extract year-range metrics from market data.
+    """
+    # 1. High/Low Calculations
+    high_52w = df['High'].tail(config.LayoutSettings.TRADING_DAYS_PER_YEAR).max()
+    low_52w = df['Low'].tail(config.LayoutSettings.TRADING_DAYS_PER_YEAR).min()
+    current = df['Close'].iloc[-1]
+
+    # 2. Percentage Logic
+    price_range = high_52w - low_52w
+    range_pos_pct = ((current - low_52w) / price_range) * 100 if price_range != 0 else 0
+
+    # 3. Normalized value for st.progress (0.0 to 1.0)
+    normalized_progress = min(max(range_pos_pct / 100, 0.0), 1.0)
+
+    return {
+        "high_52w": high_52w,
+        "low_52w": low_52w,
+        "range_pos_pct": range_pos_pct,
+        "range_pos_normalized": normalized_progress
+    }

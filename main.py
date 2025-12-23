@@ -180,25 +180,23 @@ def _render_signal_definitions_expander() -> None:
             </div>
         """, unsafe_allow_html=True)
 
-def _render_fundamental_snapshot(df: pd.DataFrame) -> None:
-    """Displays key price-action based fundamental boundaries."""
+
+def _render_fundamental_snapshot(snapshot: Dict) -> None:
+    """Displays price-action based fundamental boundaries"""
     st.markdown("### Fundamental Snapshot")
     with st.container(border=True):
-        high_52w = df['High'].tail(config.LayoutSettings.TRADING_DAYS_PER_YEAR).max()
-        low_52w = df['Low'].tail(config.LayoutSettings.TRADING_DAYS_PER_YEAR).min()
-        current = df['Close'].iloc[-1]
-
-        # Calculate where we are in the 52-week range
-        range_pos = ((current - low_52w) / (high_52w - low_52w)) * 100 if (high_52w - low_52w) != 0 else 0
-
         c1, c2 = st.columns(2)
-        c1.caption("52W High")
-        c1.markdown(f"**${high_52w:,.2f}**")
-        c2.caption("52W Low")
-        c2.markdown(f"**${low_52w:,.2f}**")
 
-        st.progress(min(max(range_pos / 100, 0.0), 1.0))
-        st.caption(f"Price is at {range_pos:.1f}% of its 52-week range")
+        # Displaying pre-calculated numbers
+        c1.caption("52W High")
+        c1.markdown(f"**${snapshot['high_52w']:,.2f}**")
+
+        c2.caption("52W Low")
+        c2.markdown(f"**${snapshot['low_52w']:,.2f}**")
+
+        # UI components using pre-calculated logic
+        st.progress(snapshot['range_pos_normalized'])
+        st.caption(f"Price is at {snapshot['range_pos_pct']:.1f}% of its 52-week range")
 
 
 def _render_risk_analytics(df: pd.DataFrame) -> None:
