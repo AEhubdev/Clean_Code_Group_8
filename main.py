@@ -124,6 +124,12 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
     signals = data_engine.calculate_market_signals(market_df, current_price)
 
     st.markdown("### Market Signals")
+    snapshot_data = data_engine.calculate_fundamental_snapshot(market_df)
+
+    _render_fundamental_snapshot(snapshot_data)
+
+    _render_risk_analytics(market_df)
+    _render_signal_definitions_expander()
 
     #TEMA Prediction
     if signals.get("target_price", 0) > 0:
