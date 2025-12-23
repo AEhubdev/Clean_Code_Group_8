@@ -207,3 +207,24 @@ def calculate_market_signals(df: pd.DataFrame, current_price: float) -> Dict:
         "regime_color": styles.SUCCESS_COLOR if is_bullish else styles.DANGER_COLOR,
         "resistance_gap": gap_percent
     }
+
+
+def prepare_header_metrics(name: str, price: float, df: pd.DataFrame, performance: Tuple) -> Dict:
+    """
+    Calculate and package all data needed for the dashboard header.
+    """
+    # Calculation: Clean Name
+    clean_name = name.split(' (')[0]
+
+    # Calculation: Daily Delta
+    yesterday_close = df['Close'].iloc[-2] if len(df) > 1 else price
+    daily_delta = ((price - yesterday_close) / yesterday_close) * 100
+
+    return {
+        "display_name": clean_name,
+        "daily_delta": daily_delta,
+        "weekly": performance[0],
+        "monthly": performance[1],
+        "ytd": performance[2],
+        "volatility": performance[3]
+    }

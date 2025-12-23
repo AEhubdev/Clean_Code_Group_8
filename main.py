@@ -69,46 +69,42 @@ def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
     _render_news_sentiment_feed(news_list, asset_display_name)
 
 
-def _render_header(name: str, price: float, df: pd.DataFrame, metrics: Tuple) -> None:
-    """
-        Displays the asset title and top-level metric row.
-
-        Args:
-            name (str): Full asset name.
-            price (float): Current live price.
-            df (pd.DataFrame): Historical market data.
-            metrics (Tuple): Calculated performance percentages (Weekly, Monthly, etc.).
-
-        Returns:
-            None
+def _render_header(name: str, price: float, header_data: Dict) -> None:
         """
-    if df.empty or 'Close' not in df.columns:
-        raise KeyError(
-            f"The DataFrame for '{name}' is missing the required '{config.CLOSE_COLUMN}' column or is empty. "
-            f"Ensure the data_engine is returning a valid dataset with historical prices."
+            Displays the asset title and top-level metric row.
+
+            Args:
+                name (str): Full asset name.
+                price (float): Current live price.
+
+            Returns:
+                None
+            """
+        st.title(f"{header_data['display_name']} Analytics Dashboard")
+
+        metric_columns = st.columns(5)
+
+        metric_columns[0].metric(
+            label="Live Price",
+            value=f"${price:,.2f}",
+            delta=f"{header_data['daily_delta']:+.2f}%"
         )
 
-    clean_name = name.split(' (')[0]
-    st.title(f"{clean_name} Analytics Dashboard")
+        metric_configs = [
+            ("Weekly", header_data['weekly'], False),
+            ("Monthly", header_data['monthly'], False),
+            ("YTD", header_data['ytd'], False),
+            ("Volatility", header_data['volatility'], True)
+        ]
 
-    yesterday_close = df['Close'].iloc[-2] if len(df) > 1 else price
-    daily_delta = ((price - yesterday_close) / yesterday_close) * 100
-
-    metric_columns = st.columns(5)
-    metric_columns[0].metric(label="Live Price", value=f"${price:,.2f}", delta=f"{daily_delta:+.2f}%")
-
-    # Map metrics to their labels and types
-    metric_configs = [
-        ("Weekly", metrics[0], False),
-        ("Monthly", metrics[1], False),
-        ("YTD", metrics[2], False),
-        ("Volatility", metrics[3], True)
-    ]
-
-    for i, (label, value, is_volatility) in enumerate(metric_configs, 1):
-        styles.render_colored_performance_metric(
-            metric_columns[i], label, f"{value:+.2f}%" if not is_volatility else f"{value:.2f}%", value, is_volatility=is_volatility
-        )
+        for i, (label, value, is_vol) in enumerate(metric_configs, 1):
+            styles.render_colored_performance_metric(
+                metric_columns[i],
+                label,
+                f"{value:+.2f}%" if not is_vol else f"{value:.2f}%",
+                value,
+                is_volatility=is_vol
+            )
 
 
 def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> None:
