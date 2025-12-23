@@ -55,7 +55,14 @@ def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
 
     performance_metrics = data_engine.calculate_performance_metrics(current_price, market_data, ytd_price)
 
-    _render_header(asset_display_name, current_price, market_data, performance_metrics)
+    header_stats = data_engine.prepare_header_metrics(
+        name=asset_display_name,
+        price=current_price,
+        df=market_data,
+        performance=performance_metrics
+    )
+
+    _render_header(asset_display_name, current_price, header_stats)
 
     st.divider()
     chart_col, intelligence_col = st.columns(config.LayoutSettings.DASHBOARD_MAIN_RATIO)
