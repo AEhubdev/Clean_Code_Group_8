@@ -11,6 +11,7 @@ import yfinance as yf
 import streamlit as st
 
 import config
+from src.ui import styles
 
 
 
@@ -185,3 +186,24 @@ def _fetch_asset_news(ticker: str) -> List[Dict[str, Any]]:
         # #68 Clear exceptions: keep behavior; optionally log `exc` for debugging.
         return []
 
+def calculate_market_signals(df: pd.DataFrame, current_price: float) -> Dict:
+    """
+    Transform raw price data into actionable signals.
+    """
+    latest = df.iloc[-1]
+
+    #Regime Logic
+    is_above_moving_average_20 = current_price > latest['Moving_Average_20']
+    is_moving_average_20_above_moving_average_50 = latest['Moving_Average_20'] > latest['Moving_Average_50']
+    is_bullish = is_above_moving_average_20 and is_moving_average_20_above_moving_average_50
+
+    #Resistance Gap Logic
+    resistance_lookback = config.LayoutSettings.RESISTANCE_LOOKBACK_DAYS
+    peak_price = df['High'].tail(resistance_lookback).max()
+    gap_percent = ((peak_price - current_price) / current_price) * 100
+
+    return {
+        "regime": "BULLISH" if is_bullish else "BEARISH",
+        "regime_color": styles.SUCCESS_COLOR if is_bullish else styles.DANGER_COLOR,
+        "resistance_gap": gap_percent
+    }

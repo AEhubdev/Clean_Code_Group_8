@@ -113,61 +113,53 @@ def _render_header(name: str, price: float, df: pd.DataFrame, metrics: Tuple) ->
 
 def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> None:
     """
-        Renders the intelligence signals and risk cards in the right-hand sidebar column.
+    Renders intelligence signals and risk analytics.
 
-        Args:
-            market_df (pd.DataFrame): Processed market data containing indicators.
-            current_price (float): The most recent asset price.
-
-        Returns:
-            None
-        """
-    if not isinstance(current_price, (int, float)):
-        raise TypeError(
-            f"The 'current_price' parameter must be a numeric value, but {type(current_price).__name__} "
-            f"was provided. Value: {current_price}. Check data_engine output."
-        )
+    Focused Task: Orchestrate the display of signals fetched from engines.
+    """
+    #Fetch calculated signals from engine
+    signals = data_engine.calculate_market_signals(market_df, current_price)
 
     st.markdown("### Market Signals")
-    latest = market_df.iloc[-1]
 
-    # 1. TEMA Prediction
-    prediction = tema_strategy_engine.generate_tema_forecast(market_df)
-    if not prediction.empty:
-        target_price = prediction['Predicted'].iloc[-1]
-        upside = ((target_price - current_price) / current_price) * 100
-        styles.render_intelligence_signal("ESTIMATED TARGET", f"${target_price:,.2f}", f"{upside:+.2f}%",
-                                          styles.COLOR_GOLD)
+    #Focused Rendering
 
-    # 2. Strategy & Regime
-    signal, color = trading_strategy.evaluate_market_signal(market_df)
-    styles.render_intelligence_signal("PRIMARY STRATEGY", signal, "LIVE", color)
 
-    is_bullish = current_price > latest['Moving_Average_20'] > latest['Moving_Average_50']
-    regime_text, regime_color = ("BULLISH", styles.SUCCESS_COLOR) if is_bullish else ("BEARISH", styles.DANGER_COLOR)
-    styles.render_intelligence_signal("MARKET REGIME", regime_text, "TREND", regime_color)
+    styles.render_intelligence_signal(
+        "MARKET REGIME",
+        signals["regime"],
+        "TREND",
+        signals["regime_color"]
+    )
 
-    # 3. Structural Analysis
-    resistance_20days = market_df['High'].tail(config.LayoutSettings.RESISTANCE_LOOKBACK_DAYS).max()
-    res_gap = ((resistance_20days - current_price) / current_price) * 100
-    styles.render_intelligence_signal("RESISTANCE GAP", f"{res_gap:.2f}%", "TO 20D HIGH", styles.HOLD_COLOR)
+    styles.render_intelligence_signal(
+        "RESISTANCE GAP",
+        f"{signals['resistance_gap']:.2f}%",
+        "TO 20D HIGH",
+        styles.HOLD_COLOR
+    )
 
-    #Fundamental Snapshot & Risk Boxes
+    #Sub-components
     _render_fundamental_snapshot(market_df)
     _render_risk_analytics(market_df)
 
+    #Definitions
+    _render_signal_definitions_expander()
+
+
+def _render_signal_definitions_expander() -> None:
+    """Focused Task: Displays the glossary of terms for the user."""
     with st.expander("ℹ Signal Definitions"):
         st.markdown(f"""
             <div style="font-size: 0.85rem; color: {styles.TEXT_SUBDUED};">
                 <b>TEMA TARGET:</b> Price prediction based on Triple Exponential Moving Averages.<br><br>
-                <b>PRIMARY STRATEGY:</b> Current actionable signal (Buy/Sell/Hold) derived from momentum and trend alignment.<br><br>
-                <b>MARKET REGIME:</b> Global trend state. Bullish if price is above key Moving Averages (Moving_Average_20/Moving_Average_50).<br><br>
+                <b>PRIMARY STRATEGY:</b> Current actionable signal (Buy/Sell/Hold) derived from momentum.<br><br>
+                <b>MARKET REGIME:</b> Global trend state. Bullish if price is above key Moving Averages.<br><br>
                 <b>SHARPE RATIO:</b> Risk-adjusted return. Above 1.0 is considered good.<br><br>
                 <b>MAX DRAWDOWN:</b> Largest peak-to-valley drop in the current period.<br><br>
                 <b>RESISTANCE GAP:</b> Percentage distance to the 20-day high.
             </div>
         """, unsafe_allow_html=True)
-
 
 def _render_fundamental_snapshot(df: pd.DataFrame) -> None:
     """Displays key price-action based fundamental boundaries."""
