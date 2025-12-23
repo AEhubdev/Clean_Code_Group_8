@@ -21,11 +21,22 @@ def generate_tema_forecast(
     forecast_steps: int = 30
 ) -> pd.DataFrame:
     """
-    Generates a forecast based on the Triple Exponential Moving Average trend.
+        Description:
+            Generates a price forecast by calculating the Triple Exponential Moving
+            Average (TEMA) and projecting its current velocity into the future.
 
-    TEMA = (3 * EMA1) - (3 * EMA2) + EMA3
-    This provides a much faster response to price changes than a standard SMA.
-    """
+        Args:
+            market_dataframe (pd.DataFrame): Data containing a 'Close' price column
+                and a DatetimeIndex.
+            forecast_steps (int): The number of future periods to predict.
+
+        Returns:
+            pd.DataFrame: A single-column DataFrame ('Predicted') containing the
+                last actual price followed by the projected price path.
+
+        Example:
+            >>> forecast = generate_tema_forecast(market_data, forecast_steps=10)
+        """
     forecast_results = pd.DataFrame()
 
     if not market_dataframe.empty:
@@ -71,7 +82,21 @@ def generate_tema_forecast(
 
 
 def _calculate_future_indices(df: pd.DataFrame, steps: int) -> pd.DatetimeIndex:
-    """Computes future timestamps based on existing frequency."""
+    """
+        Description:
+            Computes future timestamps based on the existing frequency of the
+            input dataframe's index.
+
+        Args:
+            df (pd.DataFrame): Input dataframe with a DatetimeIndex.
+            steps (int): Number of future periods to generate.
+
+        Returns:
+            pd.DatetimeIndex: Index containing future timestamps.
+
+        Example:
+            >>> future_index = _calculate_future_indices(df, 30)
+        """
     if len(df) < 2:
         return pd.date_range(
             start=df.index[-1],
@@ -80,5 +105,5 @@ def _calculate_future_indices(df: pd.DataFrame, steps: int) -> pd.DatetimeIndex:
         )[1:]
 
     delta = df.index[-1] - df.index[-2]
-    return pd.DatetimeIndex([df.index[-1] + (i * delta) for i in range(1, steps + 1)])  # C2/C5: consistent return type
+    return pd.DatetimeIndex([df.index[-1] + (i * delta) for i in range(1, steps + 1)])
 

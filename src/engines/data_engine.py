@@ -18,7 +18,25 @@ from src.logic import trading_strategy
 
 
 def _get_history_period(interval_code: str) -> str:
-    """Determine yfinance lookback period for a given interval code."""
+    """
+    Description:
+        Determines the appropriate yfinance lookback period (e.g., '60d', '10y',
+        'max') based on the provided time interval.
+
+    Args:
+        time_interval_code (str): The interval string used for the data request
+            (e.g., '1m', '1h', '1wk', '1d').
+
+    Returns:
+        str: A string representing the historical lookback period required
+            by the yfinance API.
+
+    Example:
+        >>> _get_history_period("1wk")
+        '10y'
+        >>> _get_history_period("1m")
+        '60d'
+    """
     if interval_code in config.INTRADAY_INTERVAL_CODES:
         return "60d"
     if interval_code == "1wk":
@@ -27,7 +45,23 @@ def _get_history_period(interval_code: str) -> str:
 
 
 def _normalize_market_dataframe(market_dataframe: pd.DataFrame) -> pd.DataFrame:
-    """ Clean yfinance dataframe and keep required OHLCV columns."""
+    """
+    Description:
+        Cleans a raw yfinance DataFrame by handling MultiIndex columns, filling
+        missing values, and filtering for the required OHLCV columns.
+
+    Args:
+        market_dataframe (pd.DataFrame): The raw DataFrame retrieved from yfinance,
+            which may contain MultiIndex columns or missing price data.
+
+    Returns:
+        pd.DataFrame: A cleaned DataFrame containing only 'Open', 'High', 'Low',
+            'Close', and 'Volume' columns with no missing values.
+
+    Example:
+        >>> raw_data = yf.download("AAPL")
+        >>> clean_data = _normalize_market_dataframe(raw_data)
+    """
     if market_dataframe.empty:
         return market_dataframe
 
@@ -86,7 +120,26 @@ def fetch_market_dashboard_data(
 
 
 def _enrich_with_technical_indicators(dataframe: pd.DataFrame) -> pd.DataFrame:
-    """Calculates technical overlays and oscillators."""
+    """
+        Description:
+            Enhances the input market dataframe by calculating and appending
+            technical overlays and oscillators. This includes Moving Averages (20, 50),
+            Bollinger Bands, Relative Strength Index (RSI), and MACD Histogram.
+            It also generates boolean strategy signals based on pre-defined thresholds.
+
+        Args:
+            dataframe (pd.DataFrame): A pandas DataFrame containing at least a
+                'Close' price column and chronological index.
+
+        Returns:
+            pd.DataFrame: A copy of the input DataFrame enriched with technical
+                indicator columns and 'Buy_Signal'/'Sell_Signal' booleans.
+
+        Example:
+            >>> import pandas as pd
+            >>> df = pd.DataFrame({'Close': [100, 102, 101, 105]})
+            >>> enriched_df = _enrich_with_technical_indicators(df)
+        """
     settings = config.IndicatorSettings
     dataframe = dataframe.copy()  # #18 Immutability: avoid mutating caller dataframe
 
@@ -126,7 +179,28 @@ def _calculate_period_return(
         history_df: pd.DataFrame,
         lookback_days: int
 ) -> float:
-    """Compute percentage return over lookback trading days."""
+    """
+        Description:
+            Calculates the percentage return of an asset by comparing the current price
+            against a historical closing price from a specific number of trading days ago.
+
+        Args:
+            current_price (float): The most recent live or closing price of the asset.
+            history_dataframe (pd.DataFrame): The historical market data containing a
+                'Close' column.
+            lookback_days (int): The number of trading sessions to look back for the
+                base price.
+
+        Returns:
+            float: The percentage return (e.g., 5.0 for a 5% gain). Returns 0.0 if the
+                dataframe contains insufficient historical data.
+
+        Example:
+            >>> import pandas as pd
+            >>> hist = pd.DataFrame({'Close': [100.0, 105.0, 110.0]})
+            >>> _calculate_period_return(115.0, hist, 2)
+            15.0
+        """
     if len(history_df) > lookback_days:
         previous_price = history_df["Close"].iloc[-lookback_days]
         return ((current_price - previous_price) / previous_price) * 100
@@ -157,7 +231,28 @@ def calculate_performance_metrics(
 
 
 def _fetch_year_start_price(fallback_df: pd.DataFrame, ticker: str) -> float:
-    """Attempts to fetch price from Jan 1st of current year."""
+    """
+    Description:
+        Attempts to download the market opening price for the first trading day
+        of the current calendar year using the yfinance API. If the network
+        request fails or returns empty data, it defaults to the earliest
+        available price in the provided fallback dataframe.
+
+    Args:
+        fallback_dataframe (pd.DataFrame): A pandas DataFrame containing historical
+            price data to be used if the YTD fetch fails.
+        ticker (str): The financial ticker symbol to query (e.g., 'AAPL', 'BTC-USD').
+
+    Returns:
+        float: The closing price from the start of the year or the fallback
+            period. Returns 0.0 if both the fetch and the fallback fail.
+
+    Example:
+        >>> import pandas as pd
+        >>> historical_data = pd.DataFrame({'Close': [150.0, 155.0]})
+        >>> _fetch_year_start_price(historical_data, "AAPL")
+        182.45
+    """
     try:
         current_year = datetime.now().year
         ytd_data = yf.download(ticker, start=f"{current_year}-01-01", progress=False)
@@ -171,7 +266,6 @@ def _fetch_year_start_price(fallback_df: pd.DataFrame, ticker: str) -> float:
         return float(ytd_data["Close"].iloc[0])
 
     except (IndexError, KeyError, ValueError) as error:
-        # #68: clear exception + safe fallback
         # Fallback to earliest available data in provided dataframe
         if fallback_df.empty:
             return 0.0
@@ -180,18 +274,60 @@ def _fetch_year_start_price(fallback_df: pd.DataFrame, ticker: str) -> float:
 
 
 def _fetch_asset_news(ticker: str) -> List[Dict[str, Any]]:
-    """Retrieves recent news items for the specific ticker."""
+    """
+        Description:
+            Queries the yfinance Search API to retrieve the most recent news articles
+            associated with a specific financial ticker. The function limits the result
+            set to a maximum of five items to ensure dashboard performance.
+
+        Args:
+            ticker (str): The financial ticker symbol to research (e.g., 'TSLA', 'MSFT').
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries, where each dictionary contains
+                metadata for a news story, such as 'title', 'publisher', and 'link'.
+                Returns an empty list if the API request fails.
+
+        Example:
+            >>> news_items = _fetch_asset_news("AAPL")
+            >>> print(news_items[0]['title'])
+            'Apple Reaches New All-Time High'
+        """
     try:
         search_engine = yf.Search(ticker, news_count=5)
         return search_engine.news
     except Exception as exc:
-        # #68 Clear exceptions: keep behavior; optionally log `exc` for debugging.
         return []
 
 def calculate_market_signals(df: pd.DataFrame, current_price: float) -> Dict:
     """
-    Transform raw price data into actionable signals.
-    """
+        Description:
+            Transforms raw price action and technical indicators into a dictionary of
+            actionable market signals. It evaluates the current market regime (Bullish/Bearish),
+            calculates the gap to local resistance levels, generates a TEMA-based price
+            target, and retrieves the primary trading strategy signal.
+
+        Args:
+            market_dataframe (pd.DataFrame): The technical dataset containing 'High',
+                'Moving_Average_20', and 'Moving_Average_50' columns.
+            current_price (float): The most recent market price of the asset.
+
+        Returns:
+            Dict: A dictionary containing:
+                - 'regime' (str): "BULLISH" or "BEARISH" text label.
+                - 'regime_color' (str): HEX/Color code for UI rendering.
+                - 'resistance_gap' (float): Percentage distance to the recent high.
+                - 'target_price' (float): The forecasted TEMA price.
+                - 'upside_pct' (float): Potential percentage gain to target.
+                - 'strategy_signal' (str): The specific action (Buy/Sell/Hold).
+                - 'strategy_color' (str): Visual indicator color for the signal.
+
+        Example:
+            >>> import pandas as pd
+            >>> data = pd.DataFrame({'High': [105], 'Moving_Average_20': [100], 'Moving_Average_50': [95]})
+            >>> calculate_market_signals(data, 102.5)
+            {'regime': 'BULLISH', 'resistance_gap': 2.439, ...}
+        """
     latest = df.iloc[-1]
 
     # 1. Regime Logic
@@ -231,8 +367,22 @@ def calculate_market_signals(df: pd.DataFrame, current_price: float) -> Dict:
 
 def prepare_header_metrics(name: str, price: float, df: pd.DataFrame, performance: Tuple) -> Dict:
     """
-    Calculate and package all data needed for the dashboard header.
-    """
+        Description:
+            Standardizes asset metadata and calculates the daily price delta for
+            the dashboard header.
+
+        Args:
+            name (str): Asset name with ticker suffix.
+            price (float): Current asset price.
+            market_dataframe (pd.DataFrame): Historical data for delta calculation.
+            performance_metrics (Tuple): (Weekly, Monthly, YTD, Volatility) returns.
+
+        Returns:
+            Dict[str, Any]: Formatted header data for UI metrics.
+
+        Example:
+            >>> prepare_header_metrics("Gold (GC=F)", 2000.0, df, (1.0, 2.0, 5.0, 0.5))
+        """
     # Calculation: Clean Name
     clean_name = name.split(' (')[0]
 
@@ -251,8 +401,20 @@ def prepare_header_metrics(name: str, price: float, df: pd.DataFrame, performanc
 
 def calculate_fundamental_snapshot(df: pd.DataFrame) -> Dict:
     """
-    Extract year-range metrics from market data.
-    """
+        Description:
+            Extracts 52-week price range metrics and calculates the asset's current
+            relative position within that range.
+
+        Args:
+            market_dataframe (pd.DataFrame): Historical price data with 'High', 'Low', and 'Close'.
+
+        Returns:
+            Dict[str, float]: 52-week high, low, percentage position, and normalized progress.
+
+        Example:
+            >>> calculate_fundamental_snapshot(market_dataframe)
+            {'high_52w': 150.0, 'low_52w': 100.0, 'range_pos_pct': 50.0, 'range_pos_normalized': 0.5}
+        """
     # 1. High/Low Calculations
     high_52w = df['High'].tail(config.LayoutSettings.TRADING_DAYS_PER_YEAR).max()
     low_52w = df['Low'].tail(config.LayoutSettings.TRADING_DAYS_PER_YEAR).min()

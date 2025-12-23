@@ -3,7 +3,24 @@ import config
 
 
 def evaluate_market_signal(df: pd.DataFrame) -> tuple[str, str]:
-    """Analyzes the last 10 bars to determine a Buy, Sell, or Hold status."""
+    """
+    Description:
+        Analyzes a 10-bar window of technical indicators (RSI, MACD, and Moving Average)
+        to determine a momentum-based trading signal. It looks for confluence between
+        recent extremes and current price action.
+
+    Args:
+        df (pd.DataFrame): Market dataframe containing 'RSI', 'Close', 'Moving_Average_20',
+            and 'Moving_Average_Convergence_Divergence_Histogram' columns.
+
+    Returns:
+        tuple[str, str]: A tuple containing the signal string (e.g., 'STRONG BUY')
+            and a corresponding HEX color code for UI rendering.
+
+    Example:
+        >>> signal, color = evaluate_market_signal(market_dataframe)
+        >>> print(f"Action: {signal}")
+    """
 
     # Guard clause: Ensure we have enough data for a 10-bar analysis
     if len(df) < 10:

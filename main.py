@@ -77,34 +77,36 @@ def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
 
 
 def _render_header(name: str, price: float, header_data: Dict) -> None:
-        """
-            Displays the asset title and top-level metric row.
+    """
+        Displays the asset title and top-level metric row.
 
-            Args:
-                name (str): Full asset name.
-                price (float): Current live price.
+        Args:
+            header_data (Dict): Pre-calculated metrics including price, delta, and historical returns.
 
-            Returns:
-                None
-            """
-        st.title(f"{header_data['display_name']} Analytics Dashboard")
+        Returns:
+            None: Renders Streamlit metric widgets.
 
-        metric_columns = st.columns(5)
+        Example:
+            >>> _render_header({'display_name': 'Gold', 'daily_delta': 1.2, 'weekly': 2.0...})
+    """
+    st.title(f"{header_data['display_name']} Analytics Dashboard")
 
-        metric_columns[0].metric(
+    metric_columns = st.columns(5)
+
+    metric_columns[0].metric(
             label="Live Price",
             value=f"${price:,.2f}",
             delta=f"{header_data['daily_delta']:+.2f}%"
         )
 
-        metric_configs = [
+    metric_configs = [
             ("Weekly", header_data['weekly'], False),
             ("Monthly", header_data['monthly'], False),
             ("YTD", header_data['ytd'], False),
             ("Volatility", header_data['volatility'], True)
         ]
 
-        for i, (label, value, is_vol) in enumerate(metric_configs, 1):
+    for i, (label, value, is_vol) in enumerate(metric_configs, 1):
             styles.render_colored_performance_metric(
                 metric_columns[i],
                 label,
@@ -115,7 +117,18 @@ def _render_header(name: str, price: float, header_data: Dict) -> None:
 
 
 def _render_market_signals(market_df: pd.DataFrame) -> None:
-    """Renders intelligence signals and risk analytics."""
+    """
+    Renders intelligence signals, trading strategy outputs, and risk analytics.
+
+    Args:
+        market_dataframe (pd.DataFrame): The historical price and indicator data.
+
+    Returns:
+        None: Renders information cards to the sidebar intelligence column.
+
+    Example:
+        >>> _render_market_signals(pd.DataFrame({'Close': [100, 101]}))
+    """
     current_price = market_df['Close'].iloc[-1]
 
     strat_label, strat_color = trading_strategy.evaluate_market_signal(market_df)
@@ -163,7 +176,20 @@ def _render_market_signals(market_df: pd.DataFrame) -> None:
 
 
 def _render_signal_definitions_expander() -> None:
-    """Focused Task: Displays the glossary of terms for the user."""
+    """
+        Description:
+            Displays a collapsible glossary (Streamlit expander) containing definitions
+            for technical terms like TEMA, Market Regime, and Sharpe Ratio.
+
+        Args:
+            None
+
+        Returns:
+            None: Renders a markdown-styled glossary directly to the UI.
+
+        Example:
+            >>> _render_signal_definitions_expander()
+        """
     with st.expander("ℹ Signal Definitions"):
         st.markdown(f"""
             <div style="font-size: 0.85rem; color: {styles.TEXT_SUBDUED};">
@@ -178,7 +204,22 @@ def _render_signal_definitions_expander() -> None:
 
 
 def _render_fundamental_snapshot(snapshot: Dict) -> None:
-    """Displays price-action based fundamental boundaries"""
+    """
+        Description:
+            Displays price-action based fundamental boundaries, including the 52-week
+            high/low and a progress bar showing the current price's relative position.
+
+        Args:
+            snapshot (Dict): A dictionary containing 'high_52w' (float), 'low_52w' (float),
+                'range_pos_normalized' (float), and 'range_pos_pct' (float).
+
+        Returns:
+            None: Renders fundamental metrics and a progress bar to the UI.
+
+        Example:
+            >>> data = {'high_52w': 150.0, 'low_52w': 100.0, 'range_pos_normalized': 0.5, 'range_pos_pct': 50.0}
+            >>> _render_fundamental_snapshot(data)
+        """
     st.markdown("### Fundamental Snapshot")
     with st.container(border=True):
         c1, c2 = st.columns(2)
@@ -196,7 +237,21 @@ def _render_fundamental_snapshot(snapshot: Dict) -> None:
 
 
 def _render_risk_analytics(metrics: Dict) -> None:
-    """Displays risk-adjusted performance."""
+    """
+        Description:
+            Displays risk-adjusted performance metrics, specifically the Sharpe Ratio
+            and the Maximum Drawdown for the selected asset.
+
+        Args:
+            metrics (Dict): A dictionary containing 'sharpe' (float) and 'maximum_drawdown' (float).
+
+        Returns:
+            None: Renders Streamlit metric widgets within a bordered container.
+
+        Example:
+            >>> risk_data = {'sharpe': 1.42, 'maximum_drawdown': 12.5}
+            >>> _render_risk_analytics(risk_data)
+        """
     st.markdown("### Risk Analytics")
     with st.container(border=True):
         r1, r2 = st.columns(2)
@@ -210,7 +265,18 @@ def _render_risk_analytics(metrics: Dict) -> None:
         )
 
 def _render_all_charts(ticker: str) -> None:
-    """Wrapper for categorical chart rendering."""
+    """
+        Iterates through defined chart types to render the full technical suite.
+
+        Args:
+            ticker (str): The financial ticker symbol for data retrieval.
+
+        Returns:
+            None: Renders multiple Plotly charts in containers.
+
+        Example:
+            >>> _render_all_charts("AAPL")
+        """
     chart_definitions = [
         ("PRICE ACTION & TEMA FORECAST", "price", "p1"),
         ("VOLUME SURGE", "volume", "v1"),
@@ -223,16 +289,19 @@ def _render_all_charts(ticker: str) -> None:
 
 def _render_chart_container(title: str, chart_type: str, key: str, ticker: str) -> None:
     """
-        Creates a UI container with toggles for chart types and timeframes.
+        Creates a UI container with toggles for chart styles and timeframes.
 
         Args:
-            title (str): Display title for the chart.
-            chart_type (str): Type identifier (price, rsi, etc.).
-            key (str): Unique Streamlit key for widgets.
-            ticker (str): Asset ticker symbol.
+            title (str): Title displayed above the chart.
+            chart_type (str): The logic selector (price, volume, rsi, macd).
+            key (str): Streamlit unique widget identifier.
+            ticker (str): The financial asset ticker.
 
         Returns:
-            None
+            None: Renders the chart and selection widgets.
+
+        Example:
+            >>> _render_chart_container("Price Chart", "price", "c1", "BTC-USD")
         """
     with st.container(border=True):
         header_col, type_col, selector_col = st.columns(config.LayoutSettings.CHART_HEADER_RATIO)
@@ -271,7 +340,21 @@ def _render_chart_container(title: str, chart_type: str, key: str, ticker: str) 
 
 
 def _dispatch_chart_type(fig: go.Figure, data: pd.DataFrame, chart_type: str, price_style: str = "Candlestick") -> None:
-    """Routes the figure to the specific technical layer."""
+    """
+        Routes a Plotly figure to specific drawing layers based on the indicator type.
+
+        Args:
+            figure (go.Figure): The Plotly figure object to modify.
+            data (pd.DataFrame): The technical indicator data.
+            chart_type (str): Type of indicator to plot.
+            price_style (str): Formatting choice for price (Candlestick/Line).
+
+        Returns:
+            None: Modifies the figure object in-place.
+
+        Example:
+            >>> _dispatch_chart_type(go.Figure(), df, "rsi", "Line")
+        """
     if chart_type == "price":
         _plot_price_layer(fig, data, price_style)
     elif chart_type == "volume":
@@ -283,7 +366,17 @@ def _dispatch_chart_type(fig: go.Figure, data: pd.DataFrame, chart_type: str, pr
 
 
 def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> None:
-    """Main price action layer with conditional rendering for Candlestick vs Line."""
+    """
+        Plots the primary price layer including Bollinger Bands and TEMA Forecast.
+
+        Args:
+            figure (go.Figure): Figure to update.
+            data (pd.DataFrame): Market price data.
+            price_style (str): Visual style choice.
+
+        Returns:
+            None
+        """
     forecast = tema_strategy_engine.generate_tema_forecast(data)
     date_index = data.index.strftime(config.DATE_FORMAT)
 
@@ -325,7 +418,27 @@ def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> N
 
 
 def _add_signal_markers(fig: go.Figure, data: pd.DataFrame, date_index: pd.Index) -> None:
-    """Sets the triangle signals on the chart"""
+    """
+    Description:
+        Calculates and overlay technical 'Buy' and 'Sell' signal markers onto a Plotly
+        figure. It applies a vertical buffer to ensure markers do not overlap with
+        the price candles.
+
+    Args:
+        figure (go.Figure): The Plotly figure object where markers will be drawn.
+        market_dataframe (pd.DataFrame): The technical dataset containing boolean
+            'Buy_Signal' and 'Sell_Signal' columns.
+        date_index (pd.Index): The formatted index of dates used for the X-axis.
+
+    Returns:
+        None: Modifies the provided figure object in-place by adding scatter traces.
+
+    Example:
+        >>> import plotly.graph_objects as go
+        >>> fig = go.Figure()
+        >>> dates = pd.Index(["2023-01-01", "2023-01-02"])
+        >>> _add_signal_markers(fig, market_data, dates)
+    """
     buffer = (data['High'].max() - data['Low'].min()) * config.LayoutSettings.SIGNAL_CHART_BUFFER_PERCENT  # 2% buffer to avoid the overlap on the chart
 
     for sig_type, symbol, color, col in [('Buy', 'triangle-up', styles.SUCCESS_COLOR, 'Low'),
@@ -364,7 +477,25 @@ def _plot_macd_layer(fig: go.Figure, data: pd.DataFrame) -> None:
 
 
 def _render_news_sentiment_feed(news: List[Dict], asset_name: str) -> None:
-    """Renders a list of clickable market news headlines"""
+    """
+        Description:
+            Renders a list of clickable market news headlines within individual bordered
+            containers. The function extracts the core asset name (removing ticker
+            suffixes) for the subheader and limits the display to a pre-defined maximum
+            number of items.
+
+        Args:
+            news_list (List[Dict]): A list of dictionaries, where each dictionary
+                contains a 'title' (str) and a 'link' (str).
+            asset_name (str): The full display name of the financial asset.
+
+        Returns:
+            None: Renders Streamlit markdown and container components directly to the app.
+
+        Example:
+            >>> feed = [{"title": "Market Surges", "link": "https://news.com/1"}]
+            >>> _render_news_sentiment_feed(feed, "Bitcoin (BTC-USD)")
+        """
     st.divider()
     st.subheader(f"{asset_name.split(' (')[0]} Market News")
     if not news:

@@ -9,9 +9,6 @@ from src.logic import trading_strategy, risk_engine
 from src.engines import tema_strategy_engine
 
 class TestTradingSystem(unittest.TestCase):
-    """
-    Test class for the Trading Dashboard logic.
-    """
 
     def setUp(self):
         """
