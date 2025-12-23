@@ -213,19 +213,48 @@ def calculate_performance_metrics(
         ytd_start_price: float
 ) -> Tuple[float, float, float, float]:
     """
-    Computes returns and volatility metrics for the dashboard header.
+    Description:
+        Computes key performance indicators for the asset dashboard, including
+        short-term returns (Weekly, Monthly), Year-to-Date (YTD) performance,
+        and the annualized volatility based on a 30-day lookback.
+
+    Args:
+        current_price (float): The most recent market price of the asset.
+        history_df (pd.DataFrame): Historical price data containing the 'Close' column.
+        ytd_start_price (float): The opening price of the asset at the start of the year.
 
     Returns:
-        Tuple: (Weekly Return, Monthly Return, YTD Return, Annualized Volatility)
-    """
-    # Risk Metrics: Annualized Volatility (30-day window)
-    daily_returns = history_df["Close"].pct_change().tail(30)
-    annualized_volatility = daily_returns.std() * (config.LayoutSettings.TRADING_DAYS_PER_YEAR ** 0.5) * 100
+        Tuple[float, float, float, float]: A tuple containing:
+            - Weekly Return (Percentage)
+            - Monthly Return (Percentage)
+            - YTD Return (Percentage)
+            - Annualized Volatility (Percentage)
 
-    # Return Metrics
-    weekly_return = _calculate_period_return(current_price, history_df, 5)   # #16
-    monthly_return = _calculate_period_return(current_price, history_df, 21) # #16
-    year_to_date_return = ((current_price - ytd_start_price) / ytd_start_price) * 100 if ytd_start_price else 0.0
+    Example:
+        >>> metrics = calculate_performance_metrics(2500.0, df, 2300.0)
+    """
+    # 1. Risk Metrics: Annualized Volatility (30-day window)
+    # We use .tail(31) to get 30 returns after the initial pct_change NaN
+    daily_returns = history_df["Close"].pct_change().tail(30)
+
+    # Safety Check: Handle cases where price is flat or data is missing
+    if daily_returns.empty or daily_returns.std() == 0:
+        annualized_volatility = 0.0
+    else:
+        # Standard deviation of returns scaled by the square root of trading sessions
+        annualized_volatility = (
+                daily_returns.std() * (config.LayoutSettings.TRADING_DAYS_PER_YEAR ** 0.5) * 100
+        )
+
+    # 2. Return Metrics
+    weekly_return = _calculate_period_return(current_price, history_df, 5)
+    monthly_return = _calculate_period_return(current_price, history_df, 21)
+
+    # YTD Calculation
+    if ytd_start_price and ytd_start_price != 0:
+        year_to_date_return = ((current_price - ytd_start_price) / ytd_start_price) * 100
+    else:
+        year_to_date_return = 0.0
 
     return weekly_return, monthly_return, year_to_date_return, annualized_volatility
 

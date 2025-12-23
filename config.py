@@ -26,6 +26,20 @@ AVAILABLE_TIMEFRAMES: Final[Dict[str, str]] = {
 
 #Technical indicator setup
 class IndicatorSettings:
+    """
+        Description:
+            Centralized parameters for technical analysis oscillators and overlays.
+            Adjusting these values shifts the sensitivity of the trading strategy.
+
+        Args:
+            None (Static Configuration Class)
+
+        Returns:
+            None
+
+        Example:
+            >>> rsi_limit = IndicatorSettings.RSI_OVERBOUGHT_LEVEL
+        """
 
     # Relative Strength Index (RSI)
     RSI_PERIOD: int = 14
@@ -42,9 +56,25 @@ class IndicatorSettings:
     MOVING_AVERAGE_SHORT_TERM: int = 20
     MOVING_AVERAGE_LONG_TERM: int = 50
 
+    # 10-year Treasury
+    RISK_FREE_RATE: float = 0.02
 
 #Interface setup
 class LayoutSettings:
+    """
+        Description:
+            Defines the visual architecture and UI constraints for the Streamlit
+            dashboard, including dimensions, ratios, and data windows.
+
+        Args:
+            None (Static Configuration Class)
+
+        Returns:
+            None
+
+        Example:
+            >>> chart_height = LayoutSettings.MAIN_CHART_HEIGHT
+        """
     MAIN_CHART_HEIGHT: int = 500
     INDICATOR_CHART_HEIGHT: int = 150
     LOGO_WIDTH: int = 160

@@ -255,13 +255,14 @@ def _render_risk_analytics(metrics: Dict) -> None:
     st.markdown("### Risk Analytics")
     with st.container(border=True):
         r1, r2 = st.columns(2)
-
-        # Displaying pre-calculated numbers from the 'metrics' package
         r1.metric("Sharpe Ratio", f"{metrics['sharpe']:.2f}")
 
+        # Max Drawdown is now a positive magnitude from risk_engine
         r2.metric(
             label="Max Drawdown",
-            value=f"{metrics['maximum_drawdown']:.1f}%"
+            value=f"{metrics['maximum_drawdown']:.1f}%",
+            delta="Risk Depth",
+            delta_color="off"
         )
 
 def _render_all_charts(ticker: str) -> None:
