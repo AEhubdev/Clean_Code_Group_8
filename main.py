@@ -122,6 +122,7 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
     """
     #Fetch calculated signals from engine
     signals = data_engine.calculate_market_signals(market_df, current_price)
+    risk_metrics = risk_engine.calculate_risk_metrics(market_df)
 
     st.markdown("### Market Signals")
     snapshot_data = data_engine.calculate_fundamental_snapshot(market_df)
@@ -160,7 +161,7 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
     )
 
     _render_fundamental_snapshot(snapshot_data)
-    _render_risk_analytics(market_df)
+    _render_risk_analytics(risk_metrics)
     _render_signal_definitions_expander()
 
 
@@ -197,17 +198,21 @@ def _render_fundamental_snapshot(snapshot: Dict) -> None:
         st.caption(f"Price is at {snapshot['range_pos_pct']:.1f}% of its 52-week range")
 
 
-def _render_risk_analytics(df: pd.DataFrame) -> None:
-    """Calculates and displays risk-adjusted performance."""
+def _render_risk_analytics(metrics: Dict) -> None:
+    """Displays risk-adjusted performance."""
     st.markdown("### Risk Analytics")
     with st.container(border=True):
-        # Call the new logic engine instead of doing math here
-        metrics = risk_engine.calculate_risk_metrics(df)
-
         r1, r2 = st.columns(2)
-        r1.metric("Sharpe Ratio", f"{metrics['sharpe']:.2f}")
-        r2.metric("Max Drawdown", f"{metrics['maximum_drawdown']:.1f}%", delta_color="inverse")
 
+        # Displaying pre-calculated numbers from the 'metrics' package
+        r1.metric("Sharpe Ratio", f"{metrics['sharpe']:.2f}")
+
+        r2.metric(
+            label="Max Drawdown",
+            value=f"{metrics['maximum_drawdown']:.1f}%",
+            delta=f"{metrics['maximum_drawdown']:.1f}%",
+            delta_color="inverse"
+        )
 
 def _render_all_charts(ticker: str) -> None:
     """Wrapper for categorical chart rendering."""
