@@ -209,9 +209,7 @@ def _render_risk_analytics(metrics: Dict) -> None:
 
         r2.metric(
             label="Max Drawdown",
-            value=f"{metrics['maximum_drawdown']:.1f}%",
-            delta=f"{metrics['maximum_drawdown']:.1f}%",
-            delta_color="inverse"
+            value=f"{metrics['maximum_drawdown']:.1f}%"
         )
 
 def _render_all_charts(ticker: str) -> None:
