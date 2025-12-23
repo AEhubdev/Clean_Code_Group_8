@@ -3,6 +3,7 @@ Risk Engine Logic.
 Calculates risk-adjusted performance metrics like Sharpe Ratio and Drawdown.
 """
 import pandas as pd
+import config
 
 
 def calculate_risk_metrics(df: pd.DataFrame) -> dict:
@@ -22,7 +23,7 @@ def calculate_risk_metrics(df: pd.DataFrame) -> dict:
 
     # Annualized Sharpe Ratio (Simplified)
     if returns.std() != 0:
-        sharpe = (returns.mean() / returns.std()) * (252 ** 0.5)
+        sharpe = (returns.mean() / returns.std()) * (config.LayoutSettings.TRADING_DAYS_PER_YEAR ** 0.5)
     else:
         sharpe = 0.0
 

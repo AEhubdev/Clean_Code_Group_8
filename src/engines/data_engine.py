@@ -52,7 +52,7 @@ def fetch_market_dashboard_data(
     Returns:
         A tuple containing the processed DataFrame, current price, news list, and YTD start price.
     """
-    interval_code = config.AVAILABLE_TIMEFRAMES.get(timeframe_label, config.DEFAULT_INTERVAL_CODE)  #: avoid magic string
+    interval_code = config.AVAILABLE_TIMEFRAMES.get(timeframe_label, config.DEFAULT_DATA_INTERVAL)  #: avoid magic string
 
 
     # Define data lookback period based on interval granularity
@@ -143,7 +143,7 @@ def calculate_performance_metrics(
     """
     # Risk Metrics: Annualized Volatility (30-day window)
     daily_returns = history_df["Close"].pct_change().tail(30)
-    annualized_volatility = daily_returns.std() * (252 ** 0.5) * 100
+    annualized_volatility = daily_returns.std() * (config.LayoutSettings.TRADING_DAYS_PER_YEAR ** 0.5) * 100
 
     # Return Metrics
     weekly_return = _calculate_period_return(current_price, history_df, 5)   # #16

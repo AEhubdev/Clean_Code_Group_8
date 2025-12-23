@@ -37,10 +37,10 @@ def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
             f"Please check your config.ASSET_MAPPING to ensure the ticker is correctly defined."
         )
     #Logo setup
-    col1, _ = st.columns([0.1, 0.9])
+    col1, _ = st.columns(config.LayoutSettings.LOGO_COLUMN_RATIO)
 
     with col1:
-        st.image("assets/logo.png", width=160)
+        st.image("assets/logo.png", width=config.LayoutSettings.LOGO_WIDTH)
 
 #Orchestrates the data acquisition and UI rendering for the terminal
     market_data, current_price, news_list, ytd_price = data_engine.fetch_market_dashboard_data(
@@ -58,7 +58,7 @@ def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
     _render_header(asset_display_name, current_price, market_data, performance_metrics)
 
     st.divider()
-    chart_col, intelligence_col = st.columns([0.72, 0.28])
+    chart_col, intelligence_col = st.columns(config.LayoutSettings.DASHBOARD_MAIN_RATIO)
 
     with chart_col:
         _render_all_charts(ticker_symbol)
@@ -148,8 +148,8 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
     styles.render_intelligence_signal("MARKET REGIME", regime_text, "TREND", regime_color)
 
     # 3. Structural Analysis
-    res_20d = market_df['High'].tail(20).max()
-    res_gap = ((res_20d - current_price) / current_price) * 100
+    resistance_20days = market_df['High'].tail(config.LayoutSettings.RESISTANCE_LOOKBACK_DAYS).max()
+    res_gap = ((resistance_20days - current_price) / current_price) * 100
     styles.render_intelligence_signal("RESISTANCE GAP", f"{res_gap:.2f}%", "TO 20D HIGH", styles.HOLD_COLOR)
 
     #Fundamental Snapshot & Risk Boxes
@@ -173,8 +173,8 @@ def _render_fundamental_snapshot(df: pd.DataFrame) -> None:
     """Displays key price-action based fundamental boundaries."""
     st.markdown("### Fundamental Snapshot")
     with st.container(border=True):
-        high_52w = df['High'].tail(252).max()
-        low_52w = df['Low'].tail(252).min()
+        high_52w = df['High'].tail(config.LayoutSettings.TRADING_DAYS_PER_YEAR).max()
+        low_52w = df['Low'].tail(config.LayoutSettings.TRADING_DAYS_PER_YEAR).min()
         current = df['Close'].iloc[-1]
 
         # Calculate where we are in the 52-week range
@@ -228,7 +228,7 @@ def _render_chart_container(title: str, chart_type: str, key: str, ticker: str) 
             None
         """
     with st.container(border=True):
-        header_col, type_col, selector_col = st.columns([0.5, 0.2, 0.3])
+        header_col, type_col, selector_col = st.columns(config.LayoutSettings.CHART_HEADER_RATIO)
         header_col.markdown(f"**{title}**")
 
         # Toggle only appears for the main price chart
@@ -249,7 +249,7 @@ def _render_chart_container(title: str, chart_type: str, key: str, ticker: str) 
             st.warning(f"No chart data available for {ticker} at {timeframe} timeframe.")
             return
 
-        plot_data = df.tail(150).copy()
+        plot_data = df.tail(config.LayoutSettings.CHART_LOOKBACK_PERIODS).copy()
         fig = go.Figure()
 
         # Modified to pass the price_style
@@ -319,7 +319,7 @@ def _plot_price_layer(fig: go.Figure, data: pd.DataFrame, price_style: str) -> N
 
 def _add_signal_markers(fig: go.Figure, data: pd.DataFrame, date_index: pd.Index) -> None:
     """Sets the triangle signals on the chart"""
-    buffer = (data['High'].max() - data['Low'].min()) * 0.02  # 2% buffer to avoid the overlap on the chart
+    buffer = (data['High'].max() - data['Low'].min()) * config.LayoutSettings.SIGNAL_CHART_BUFFER_PERCENT  # 2% buffer to avoid the overlap on the chart
 
     for sig_type, symbol, color, col in [('Buy', 'triangle-up', styles.SUCCESS_COLOR, 'Low'),
                                          ('Sell', 'triangle-down', styles.DANGER_COLOR, 'High')]:
@@ -336,7 +336,7 @@ def _plot_volume_layer(fig: go.Figure, data: pd.DataFrame) -> None:
     date_index = data.index.strftime(config.DATE_FORMAT)
     colors = [styles.SUCCESS_COLOR if c >= o else styles.DANGER_COLOR for c, o in zip(data['Close'], data['Open'])]
     fig.add_bar(x=date_index, y=data['Volume'], marker_color=colors)
-    fig.update_layout(height=150)
+    fig.update_layout(height= config.LayoutSettings.INDICATOR_CHART_HEIGHT)
 
 
 def _plot_rsi_layer(fig: go.Figure, data: pd.DataFrame) -> None:
@@ -345,7 +345,7 @@ def _plot_rsi_layer(fig: go.Figure, data: pd.DataFrame) -> None:
     fig.add_scatter(x=date_index, y=data['RSI'], line=dict(color=styles.RSI_COLOR))
     fig.add_hline(y=config.IndicatorSettings.RSI_OVERBOUGHT_LEVEL, line_color="red", line_dash="dash")
     fig.add_hline(y=config.IndicatorSettings.RSI_OVERSOLD_LEVEL, line_color="green", line_dash="dash")
-    fig.update_layout(height=150, yaxis=dict(range=[0, 100]))
+    fig.update_layout(height=config.LayoutSettings.INDICATOR_CHART_HEIGHT, yaxis=dict(range=[0, 100]))
 
 
 def _plot_macd_layer(fig: go.Figure, data: pd.DataFrame) -> None:
@@ -353,7 +353,7 @@ def _plot_macd_layer(fig: go.Figure, data: pd.DataFrame) -> None:
     date_index = data.index.strftime(config.DATE_FORMAT)
     colors = [styles.SUCCESS_COLOR if x >= 0 else styles.DANGER_COLOR for x in data['Moving_Average_Convergence_Divergence_Histogram']]
     fig.add_bar(x=date_index, y=data['Moving_Average_Convergence_Divergence_Histogram'], marker_color=colors)
-    fig.update_layout(height=150)
+    fig.update_layout(height=config.LayoutSettings.INDICATOR_CHART_HEIGHT)
 
 
 def _render_news_sentiment_feed(news: List[Dict], asset_name: str) -> None:
@@ -363,7 +363,7 @@ def _render_news_sentiment_feed(news: List[Dict], asset_name: str) -> None:
     if not news:
         st.info("No news items found.")
         return
-    for item in news[:5]:
+    for item in news[:config.LayoutSettings.MAX_NEWS_ITEMS]:
         with st.container(border=True):
             st.markdown(f"**[{item['title']}]({item['link']})**")
 

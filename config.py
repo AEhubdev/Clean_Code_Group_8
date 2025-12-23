@@ -1,11 +1,7 @@
-from typing import Dict, Final
+from typing import Dict, Final, List
 
 CLOSE_COLUMN: Final[str] = "Close"
-
-DEFAULT_INTERVAL_CODE = "1d"
-INTRADAY_INTERVAL_CODES = ["15m", "1h"]
-
-DATE_FORMAT = '%Y-%m-%d %H:%M'
+DATE_FORMAT: Final[str] = "%Y-%m-%d %H:%M"
 
 # Mapping short names with full names
 ASSET_MAPPING: Final[Dict[str, str]] = {
@@ -17,7 +13,16 @@ ASSET_MAPPING: Final[Dict[str, str]] = {
 #Setting the default Dashboard view
 DEFAULT_SYMBOL: Final[str] = "GC=F"
 DEFAULT_DATA_INTERVAL: Final[str] = "1d"
+INTRADAY_INTERVAL_CODES: Final[List[str]] = ["15m", "1h"]
 
+#Timeframe mapping
+AVAILABLE_TIMEFRAMES: Final[Dict[str, str]] = {
+    "15 Minutes": "15m",
+    "1 Hour": "1h",
+    "1 Day": "1d",
+    "1 Week": "1wk",
+    "1 Month": "1mo",
+}
 
 #Technical indicator setup
 class IndicatorSettings:
@@ -42,14 +47,18 @@ class IndicatorSettings:
 class LayoutSettings:
     MAIN_CHART_HEIGHT: int = 500
     INDICATOR_CHART_HEIGHT: int = 150
+    LOGO_WIDTH: int = 160
 
+    # Column Ratios (Streamlit st.columns)
+    LOGO_COLUMN_RATIO: List[float] = [0.1, 0.9]
+    DASHBOARD_MAIN_RATIO: List[float] = [0.72, 0.28]
+    CHART_HEADER_RATIO: List[float] = [0.5, 0.2, 0.3]
 
-# --- TIMEFRAME MAPPINGS ---
-# C1: Full names (Timeframes instead of timeframe)
-AVAILABLE_TIMEFRAMES: Final[Dict[str, str]] = {
-    "15 Minutes": "15m",
-    "1 Hour": "1h",
-    "1 Day": "1d",
-    "1 Week": "1wk",
-    "1 Month": "1mo",
-}
+    # Scaling, Buffers & Limits
+    SIGNAL_CHART_BUFFER_PERCENT: float = 0.02
+    MAX_NEWS_ITEMS: int = 5
+
+    # Calculation & Lookback Windows
+    TRADING_DAYS_PER_YEAR: int = 252
+    RESISTANCE_LOOKBACK_DAYS: int = 20
+    CHART_LOOKBACK_PERIODS: int = 150
