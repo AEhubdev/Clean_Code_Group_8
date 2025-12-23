@@ -71,7 +71,7 @@ def render_live_dashboard(ticker_symbol: str, asset_display_name: str) -> None:
         _render_all_charts(ticker_symbol)
 
     with intelligence_col:
-        _render_market_signals(market_data, current_price)
+        _render_market_signals(market_data)
 
     _render_news_sentiment_feed(news_list, asset_display_name)
 
