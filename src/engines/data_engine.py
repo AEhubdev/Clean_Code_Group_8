@@ -12,6 +12,8 @@ import streamlit as st
 
 import config
 from src.ui import styles
+from src.engines import tema_strategy_engine
+from src.logic import trading_strategy
 
 
 
@@ -192,20 +194,38 @@ def calculate_market_signals(df: pd.DataFrame, current_price: float) -> Dict:
     """
     latest = df.iloc[-1]
 
-    #Regime Logic
-    is_above_moving_average_20 = current_price > latest['Moving_Average_20']
-    is_moving_average_20_above_moving_average_50 = latest['Moving_Average_20'] > latest['Moving_Average_50']
-    is_bullish = is_above_moving_average_20 and is_moving_average_20_above_moving_average_50
+    # 1. Regime Logic
+    is_above_ma20 = current_price > latest['Moving_Average_20']
+    is_ma20_above_ma50 = latest['Moving_Average_20'] > latest['Moving_Average_50']
+    is_bullish = is_above_ma20 and is_ma20_above_ma50
 
-    #Resistance Gap Logic
+    # We define these specifically so the dictionary below can find them
+    regime_text = "BULLISH" if is_bullish else "BEARISH"
+    regime_color = styles.SUCCESS_COLOR if is_bullish else styles.DANGER_COLOR
+
+    # 2. Resistance Gap Logic
     resistance_lookback = config.LayoutSettings.RESISTANCE_LOOKBACK_DAYS
     peak_price = df['High'].tail(resistance_lookback).max()
-    gap_percent = ((peak_price - current_price) / current_price) * 100
+
+    # We define this as 'resistance_gap' to match the dictionary key
+    resistance_gap = ((peak_price - current_price) / current_price) * 100
+
+    #TEMA Logic
+    prediction = tema_strategy_engine.generate_tema_forecast(df)
+    target_price = prediction['Predicted'].iloc[-1] if not prediction.empty else 0
+    upside = ((target_price - current_price) / current_price) * 100 if target_price > 0 else 0
+
+    #Strategy Logic
+    strategy_signal, strategy_color = trading_strategy.evaluate_market_signal(df)
 
     return {
-        "regime": "BULLISH" if is_bullish else "BEARISH",
-        "regime_color": styles.SUCCESS_COLOR if is_bullish else styles.DANGER_COLOR,
-        "resistance_gap": gap_percent
+        "regime": regime_text,
+        "regime_color": regime_color,
+        "resistance_gap": resistance_gap,
+        "target_price": target_price,
+        "upside_pct": upside,
+        "strategy_signal": strategy_signal,
+        "strategy_color": strategy_color
     }
 
 

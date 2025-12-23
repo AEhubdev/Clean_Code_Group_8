@@ -125,9 +125,24 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
 
     st.markdown("### Market Signals")
 
-    #Focused Rendering
+    #TEMA Prediction
+    if signals.get("target_price", 0) > 0:
+        styles.render_intelligence_signal(
+            "ESTIMATED TARGET",
+            f"${signals['target_price']:,.2f}",
+            f"{signals['upside_pct']:+.2f}%",
+            styles.COLOR_GOLD
+        )
 
+    #Strategy Signal
+    styles.render_intelligence_signal(
+        "PRIMARY STRATEGY",
+        signals["strategy_signal"],
+        "LIVE",
+        signals["strategy_color"]
+    )
 
+    #Market Regime
     styles.render_intelligence_signal(
         "MARKET REGIME",
         signals["regime"],
@@ -135,6 +150,7 @@ def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> Non
         signals["regime_color"]
     )
 
+    #Structural Analysis
     styles.render_intelligence_signal(
         "RESISTANCE GAP",
         f"{signals['resistance_gap']:.2f}%",
