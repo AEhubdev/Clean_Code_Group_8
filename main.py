@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -114,52 +114,49 @@ def _render_header(name: str, price: float, header_data: Dict) -> None:
             )
 
 
-def _render_market_signals(market_df: pd.DataFrame, current_price: float) -> None:
-    """
-    Renders intelligence signals and risk analytics.
+def _render_market_signals(market_df: pd.DataFrame) -> None:
+    """Renders intelligence signals and risk analytics."""
+    current_price = market_df['Close'].iloc[-1]
 
-    Focused Task: Orchestrate the display of signals fetched from engines.
-    """
-    #Fetch calculated signals from engine
-    signals = data_engine.calculate_market_signals(market_df, current_price)
+    strat_label, strat_color = trading_strategy.evaluate_market_signal(market_df)
+
+    engine_signals = data_engine.calculate_market_signals(market_df, current_price)
     risk_metrics = risk_engine.calculate_risk_metrics(market_df)
-
-    st.markdown("### Market Signals")
     snapshot_data = data_engine.calculate_fundamental_snapshot(market_df)
 
-    #TEMA Prediction
-    if signals.get("target_price", 0) > 0:
+    st.markdown("### Market Signals")
+
+    if engine_signals.get("target_price", 0) > 0:
         styles.render_intelligence_signal(
             "ESTIMATED TARGET",
-            f"${signals['target_price']:,.2f}",
-            f"{signals['upside_pct']:+.2f}%",
+            f"${engine_signals['target_price']:,.2f}",
+            f"{engine_signals['upside_pct']:+.2f}%",
             styles.COLOR_GOLD
         )
 
-    #Strategy Signal
+    # Strategy Signal
     styles.render_intelligence_signal(
         "PRIMARY STRATEGY",
-        signals["strategy_signal"],
+        strat_label,
         "LIVE",
-        signals["strategy_color"]
+        strat_color
     )
 
-    #Market Regime
+    # Market Regime (From data_engine)
     styles.render_intelligence_signal(
         "MARKET REGIME",
-        signals["regime"],
+        engine_signals["regime"],
         "TREND",
-        signals["regime_color"]
+        engine_signals["regime_color"]
     )
 
-    #Structural Analysis
+    # Structural Analysis (From data_engine)
     styles.render_intelligence_signal(
         "RESISTANCE GAP",
-        f"{signals['resistance_gap']:.2f}%",
+        f"{engine_signals['resistance_gap']:.2f}%",
         "TO 20D HIGH",
         styles.HOLD_COLOR
     )
-
     _render_fundamental_snapshot(snapshot_data)
     _render_risk_analytics(risk_metrics)
     _render_signal_definitions_expander()
