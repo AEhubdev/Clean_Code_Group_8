@@ -64,10 +64,8 @@ def generate_tema_forecast(
         # 3. Project Future Path
         latest_price = float(close_prices.iloc[-1])
 
-        forecast_path = []
-        for step in range(1, forecast_steps + 1):
-            projected_point = latest_price + (tema_velocity * step)
-            forecast_path.append(projected_point)
+        steps_index = pd.RangeIndex(1, forecast_steps + 1)
+        forecast_path = (latest_price + tema_velocity * steps_index).to_list()
 
         # 4. Generate Timestamps
         future_dates = _calculate_future_indices(market_dataframe, forecast_steps)
