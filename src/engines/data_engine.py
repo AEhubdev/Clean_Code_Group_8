@@ -81,8 +81,12 @@ def _normalize_market_dataframe(market_dataframe: pd.DataFrame) -> pd.DataFrame:
         market_dataframe.columns = market_dataframe.columns.get_level_values(0)
 
     market_dataframe = market_dataframe.ffill().dropna()
-    return market_dataframe[_OHLCV_COLUMNS]
 
+    missing_columns = [col for col in _OHLCV_COLUMNS if col not in market_dataframe.columns]
+    if missing_columns:
+        return pd.DataFrame()
+
+    return market_dataframe[_OHLCV_COLUMNS]
 
 
 @st.cache_data(ttl=60)
