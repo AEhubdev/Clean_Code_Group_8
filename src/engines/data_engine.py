@@ -337,7 +337,7 @@ def _fetch_asset_news(ticker: str) -> List[Dict[str, Any]]:
     try:
         search_engine = yf.Search(ticker, news_count=5)
         return search_engine.news
-    except Exception as exc:
+    except Exception:
         return []
 
 def calculate_market_signals(df: pd.DataFrame, current_price: float) -> Dict:
