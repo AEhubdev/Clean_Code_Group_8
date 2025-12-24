@@ -15,6 +15,13 @@ from src.ui import styles
 from src.engines import tema_strategy_engine
 from src.logic import trading_strategy
 
+_OHLCV_COLUMNS = ["Open", "High", "Low", "Close", "Volume"]
+
+_MACD_FAST_SPAN = 12
+_MACD_SLOW_SPAN = 26
+_MACD_SIGNAL_SPAN = 9
+
+_RSI_EPSILON = 1e-10
 
 
 def _get_history_period(interval_code: str) -> str:
@@ -71,7 +78,8 @@ def _normalize_market_dataframe(market_dataframe: pd.DataFrame) -> pd.DataFrame:
         market_dataframe.columns = market_dataframe.columns.get_level_values(0)
 
     market_dataframe = market_dataframe.ffill().dropna()
-    return market_dataframe[["Open", "High", "Low", "Close", "Volume"]]
+    return market_dataframe[_OHLCV_COLUMNS]
+
 
 
 @st.cache_data(ttl=60)
@@ -157,15 +165,16 @@ def _enrich_with_technical_indicators(dataframe: pd.DataFrame) -> pd.DataFrame:
     average_gain = (price_delta.where(price_delta > 0, 0)).rolling(window=settings.RSI_PERIOD).mean()
     average_loss = (-price_delta.where(price_delta < 0, 0)).rolling(window=settings.RSI_PERIOD).mean()
 
-    relative_strength = average_gain / (average_loss + 1e-10)
+    relative_strength = average_gain / (average_loss + _RSI_EPSILON)
     dataframe['RSI'] = 100 - (100 / (1 + relative_strength))
 
     # 4. Trend Strength (MACD)
-    exponential_ma_12 = dataframe['Close'].ewm(span=12, adjust=False).mean()
-    exponential_ma_26 = dataframe['Close'].ewm(span=26, adjust=False).mean()
+    # 4. Trend Strength (MACD)
+    exponential_ma_12 = dataframe["Close"].ewm(span=_MACD_FAST_SPAN, adjust=False).mean()
+    exponential_ma_26 = dataframe["Close"].ewm(span=_MACD_SLOW_SPAN, adjust=False).mean()
     macd_line = exponential_ma_12 - exponential_ma_26
-    signal_line = macd_line.ewm(span=9, adjust=False).mean()
-    dataframe['Moving_Average_Convergence_Divergence_Histogram'] = macd_line - signal_line
+    signal_line = macd_line.ewm(span=_MACD_SIGNAL_SPAN, adjust=False).mean()
+    dataframe["Moving_Average_Convergence_Divergence_Histogram"] = macd_line - signal_line
 
     # 5. Strategic Signal Assignment (C2: Straightforward logic)
     dataframe['Buy_Signal'] = (dataframe['RSI'] < settings.RSI_BULLISH_THRESHOLD) & (dataframe['Moving_Average_Convergence_Divergence_Histogram'] > 0)
