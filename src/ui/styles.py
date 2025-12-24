@@ -32,7 +32,7 @@ def inject_terminal_stylesheet() -> None:
         Returns:
             None
     """
-    
+
     st.markdown(f"""
         <style>
         /* Main Container */
@@ -125,6 +125,21 @@ def render_intelligence_signal(
         status_badge_text: str,
         signal_color: str
 ) -> None:
+    """
+    Description:
+        Renders an intelligence or status signal card displaying a primary value
+        alongside a color-coded badge to indicate the current signal state.
+
+    Args:
+        signal_title (str): The title of the intelligence signal.
+        primary_value (str): The main value to display prominently.
+        status_badge_text (str): Text to display inside the status badge.
+        signal_color (str): Hex color code used for the status badge background.
+
+    Returns:
+        None
+    """
+
     #Renders a status card with a value and a colored badge
 
     st.markdown(f"""
