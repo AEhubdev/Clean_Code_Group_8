@@ -32,7 +32,7 @@ def inject_terminal_stylesheet() -> None:
         Returns:
             None
     """
-
+    
     st.markdown(f"""
         <style>
         /* Main Container */
@@ -87,7 +87,23 @@ def render_colored_performance_metric(
         numeric_delta: float,
         is_volatility: bool = False
 ) -> None:
+    """
+    Description:
+        Renders a performance metric within a Streamlit column using color-coded
+        styling to indicate positive, negative, or volatility-based values.
 
+    Args:
+        streamlit_column (Any): The Streamlit column object where the metric
+            should be rendered.
+        metric_label (str): The display label for the metric.
+        metric_display_value (str): The formatted value to display.
+        numeric_delta (float): The numeric delta used to determine color coding.
+        is_volatility (bool): Whether the metric represents volatility, in which
+            case a warning color is used.
+
+    Returns:
+        None
+    """
 
     # Ternary Logic for concise color picking
     if is_volatility:
