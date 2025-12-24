@@ -59,6 +59,14 @@ class IndicatorSettings:
     # 10-year Treasury
     RISK_FREE_RATE: float = 0.02
 
+    #MACD setup
+    _MACD_FAST_SPAN = 12
+    _MACD_SLOW_SPAN = 26
+    _MACD_SIGNAL_SPAN = 9
+
+    #RSI dependency
+    _RSI_EPSILON = 1e-10
+
 #Interface setup
 class LayoutSettings:
     """
@@ -92,3 +100,6 @@ class LayoutSettings:
     TRADING_DAYS_PER_YEAR: int = 252
     RESISTANCE_LOOKBACK_DAYS: int = 20
     CHART_LOOKBACK_PERIODS: int = 150
+
+    #Column Extraction
+    _OHLCV_COLUMNS = ["Open", "High", "Low", "Close", "Volume"]

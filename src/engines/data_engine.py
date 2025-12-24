@@ -15,14 +15,6 @@ from src.ui import styles
 from src.engines import tema_strategy_engine
 from src.logic import trading_strategy
 
-_OHLCV_COLUMNS = ["Open", "High", "Low", "Close", "Volume"]
-
-_MACD_FAST_SPAN = 12
-_MACD_SLOW_SPAN = 26
-_MACD_SIGNAL_SPAN = 9
-
-_RSI_EPSILON = 1e-10
-
 def _empty_dashboard_result() -> Tuple[pd.DataFrame, float, List[Dict[str, Any]], float]:
     return pd.DataFrame(), 0.0, [], 0.0
 
@@ -81,7 +73,7 @@ def _normalize_market_dataframe(market_dataframe: pd.DataFrame) -> pd.DataFrame:
         market_dataframe.columns = market_dataframe.columns.get_level_values(0)
 
     market_dataframe = market_dataframe.ffill().dropna()
-    return market_dataframe[_OHLCV_COLUMNS]
+    return market_dataframe[config.LayoutSettings._OHLCV_COLUMNS]
 
 
 
@@ -168,15 +160,15 @@ def _enrich_with_technical_indicators(dataframe: pd.DataFrame) -> pd.DataFrame:
     average_gain = (price_delta.where(price_delta > 0, 0)).rolling(window=settings.RSI_PERIOD).mean()
     average_loss = (-price_delta.where(price_delta < 0, 0)).rolling(window=settings.RSI_PERIOD).mean()
 
-    relative_strength = average_gain / (average_loss + _RSI_EPSILON)
+    relative_strength = average_gain / (average_loss + config.IndicatorSettings._RSI_EPSILON)
     dataframe['RSI'] = 100 - (100 / (1 + relative_strength))
 
     # 4. Trend Strength (MACD)
     # 4. Trend Strength (MACD)
-    exponential_ma_12 = dataframe["Close"].ewm(span=_MACD_FAST_SPAN, adjust=False).mean()
-    exponential_ma_26 = dataframe["Close"].ewm(span=_MACD_SLOW_SPAN, adjust=False).mean()
+    exponential_ma_12 = dataframe["Close"].ewm(span=config.IndicatorSettings._MACD_FAST_SPAN, adjust=False).mean()
+    exponential_ma_26 = dataframe["Close"].ewm(span=config.IndicatorSettings._MACD_SLOW_SPAN, adjust=False).mean()
     macd_line = exponential_ma_12 - exponential_ma_26
-    signal_line = macd_line.ewm(span=_MACD_SIGNAL_SPAN, adjust=False).mean()
+    signal_line = macd_line.ewm(span=config.IndicatorSettings._MACD_SIGNAL_SPAN, adjust=False).mean()
     dataframe["Moving_Average_Convergence_Divergence_Histogram"] = macd_line - signal_line
 
     # 5. Strategic Signal Assignment (C2: Straightforward logic)
