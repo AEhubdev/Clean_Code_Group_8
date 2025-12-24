@@ -156,15 +156,20 @@ We use a multi-layered financial engineering stack pf functions and formulas:
 * **Python 3.10+** (Required for Streamlit Fragment support and advanced typing)
 
 ### Installation
-1. **Install Libraries:**
+1. **Clone the repo:**
+   Clone the repository using the https address
+   ```bash
+   git clone https://github.com/AEhubdev/Clean_Code_Group_8.git
+
+2. **Install Libraries:**
    Instead of installing libraries one by one, use the provided requirements file to ensure version compatibility:
    ```bash
-   pip install -r requirements.txt
-   
-1. **Run Application:**
-Launch the terminal dashboard from the root directory:
-    ```bash
-   python -m streamlit run main.py
+      pip install -r requirements.txt
+ 
+3. **Run application:**
+   Launch the terminal dashboard from the root directory:
+   ```bash
+    python -m streamlit run main.py
 
 ---
 
