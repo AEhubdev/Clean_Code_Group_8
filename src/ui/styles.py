@@ -20,6 +20,19 @@ BB_LINE_COLOR = 'rgba(173, 216, 230, 0.2)'
 BB_FILL_COLOR = 'rgba(173, 216, 230, 0.05)'
 
 def inject_terminal_stylesheet() -> None:
+    """
+    Description:
+        Injects a custom CSS stlyesheet into the Streamlit app to enforce
+        a terminal-style dark theme. This includes styling for the main
+        container, sidebar branding, metrics, and intelligence/status cards.
+
+        Args:
+            None
+
+        Returns:
+            None
+    """
+
     st.markdown(f"""
         <style>
         /* Main Container */
