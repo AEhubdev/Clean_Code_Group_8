@@ -23,6 +23,9 @@ _MACD_SIGNAL_SPAN = 9
 
 _RSI_EPSILON = 1e-10
 
+def _empty_dashboard_result() -> Tuple[pd.DataFrame, float, List[Dict[str, Any]], float]:
+    return pd.DataFrame(), 0.0, [], 0.0
+
 
 def _get_history_period(interval_code: str) -> str:
     """
@@ -111,12 +114,12 @@ def fetch_market_dashboard_data(
     )
 
     if market_dataframe.empty:
-        return pd.DataFrame(), 0.0, [], 0.0
+        return _empty_dashboard_result()
 
     # Clean multi-index columns from yfinance (C5: Well-formatted)
     market_dataframe = _normalize_market_dataframe(market_dataframe)  # Step 3B
     if market_dataframe.empty:
-        return pd.DataFrame(), 0.0, [], 0.0
+        return _empty_dashboard_result()
 
     market_dataframe = _enrich_with_technical_indicators(market_dataframe)
 
